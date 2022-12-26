@@ -205,13 +205,13 @@ echo -e "$COLOR1└────────────────────�
 echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
 echo -e "$COLOR1│${NC}  $COLOR1[INFO]${NC} Check for Script updates"
 sleep 2
-wget -q -O /root/install_up.sh "https://raw.githubusercontent.com/artanodrop/update/main/install_up.sh" && chmod +x /root/install_up.sh
+wget -q -O /root/install_up.sh "https://raw.githubusercontent.com/Masbrow33/btr/main/update/update.sh" && chmod +x /root/install_up.sh
 sleep 2
 ./install_up.sh
 sleep 5
 rm /root/install_up.sh
 rm /opt/.ver
-version_up=$( curl -sS https://raw.githubusercontent.com/artanodrop/update/main/version)
+version_up=$( curl -sS https://raw.githubusercontent.com/Masbrow33/btr/main/version)
 echo "$version_up" > /opt/.ver
 echo -e "$COLOR1│${NC}  $COLOR1[INFO]${NC} Successfully Up To Date!"
 echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
@@ -231,7 +231,7 @@ upminutes=`uptime -p | awk '{print $4,$5}' | cut -d , -f1`
 uptimecek=`uptime -p | awk '{print $6,$7}' | cut -d , -f1`
 cekup=`uptime -p | grep -ow "day"`
 IPVPS=$(curl -s ipinfo.io/ip )
-serverV=$( curl -sS https://raw.githubusercontent.com/artanodrop/permission/main/version)
+serverV=$( curl -sS https://raw.githubusercontent.com/Masbrow33/prokontrol/main/version)
 if [ "$Isadmin" = "Pro" ]; then
 uis="${GREEN}Premium User$NC"
 else
