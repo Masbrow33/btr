@@ -13,10 +13,10 @@ if [ "${EUID}" -ne 0 ]; then
 fi
 
 # // Exporting Language to UTF-8
-export LC_ALL='en_US.UTF-8'
-export LANG='en_US.UTF-8'
-export LANGUAGE='en_US.UTF-8'
-export LC_CTYPE='en_US.utf8'
+export LC_ALL='C.UTF-8'
+export LANG='C.UTF-8'
+export LANGUAGE='C.UTF-8'
+export LC_CTYPE='C.UTF-8'
 
 # // Export Color & Information
 export RED='\033[0;31m'
@@ -326,6 +326,13 @@ clear
 yellow "Add Domain for vmess/vless/trojan dll"
 echo " "
 read -rp "Input ur domain : " -e pp
+# Domain kosong membuat nginx gagal start (server_name tanpa argumen)
+# dan Xray tidak bisa membuat sertifikat. Pakai placeholder yang aman.
+if [ -z "$pp" ]; then
+    pp=$(curl -s -m 10 https://ipinfo.io/ip/ 2>/dev/null | tr -d '\r\n')
+    [ -z "$pp" ] && pp="127.0.0.1"
+    yellow "Domain kosong — memakai IP server: $pp"
+fi
 echo "$pp" > /root/domain
 echo "$pp" > /root/scdomain
 echo "$pp" > /etc/xray/domain

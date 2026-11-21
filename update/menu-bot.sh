@@ -11,11 +11,13 @@ COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | cut -d: -f2|sed 's/
 ###########- END COLOR CODE -##########
 
 ipes=$(curl -sS ipv4.icanhazip.com)
-[[ ! -f /usr/bin/jq ]] && {
-    red "Downloading jq file!"
-    wget -q --no-check-certificate "https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64" -O /usr/bin/jq
-    chmod +x /usr/bin/jq
-}
+if ! command -v jq >/dev/null 2>&1; then
+    # jq dari apt (binary jq-linux64 di GitHub hanya x86_64, gagal di ARM)
+    apt-get install -y -qq jq >/dev/null 2>&1 || true
+fi
+if ! command -v jq >/dev/null 2>&1; then
+    red "jq tidak tersedia — beberapa fitur menu bisa terbatas."
+fi
 
 dircreate() {
     [[ ! -d /root/multi ]] && mkdir -p /root/multi && touch /root/multi/voucher && touch /root/multi/claimed && touch /root/multi/reseller && touch /root/multi/public && touch /root/multi/hist && echo "off" >/root/multi/public
