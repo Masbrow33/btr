@@ -89,6 +89,19 @@ if [[ "$Getting_Data_On_Server" == "$License_Key" ]]; then
     sleep 1
 else
     echo -e "${EROR} Your License Key Not Valid !"
+    echo ""
+    echo -e "${INFO} Kemungkinan penyebab:"
+    echo -e "  1. License key salah ketik"
+    echo -e "  2. License key belum terdaftar di repo"
+    echo -e "  3. Server tidak bisa mengakses ${Server_URL}"
+    echo ""
+    echo -e "${INFO} Cek koneksi ke server lisensi:"
+    echo -e "  curl -s https://${Server_URL}/validated-registered-license-key.txt | head -1"
+    echo ""
+    echo -e "${INFO} Tambahkan license baru (hash = sha256 dua lapis):"
+    echo -e "  printf '%s' \"KEYKAMU\" | sha256sum | cut -d' ' -f1 | tr -d '\\n' > /tmp/h1"
+    echo -e "  cat /tmp/h1 | tr -d '\\n' | sed 's/$/1920192019209129403940293013912/' | sha256sum | cut -d' ' -f1"
+    echo ""
     exit 1
 fi
 # // Checking Your VPS Blocked Or No
@@ -217,14 +230,33 @@ else
   echo -e "[ ${green}INFO${NC} ] Oke installed"
 fi
 
+# ----------------------------------------------------------
+#  Cek linux-headers (TIDAK FATAL)
+#  Sebelumnya: kalau headers tidak ada, script menghapus
+#  dirinya sendiri lalu exit tanpa pesan -> instalasi mati
+#  diam-diam. Banyak kernel VPS (aws/azure/ovh/custom) tidak
+#  punya paket linux-headers di repo. Headers hanya dibutuhkan
+#  fitur tertentu (WireGuard, modul kernel), bukan SSH/Xray.
+# ----------------------------------------------------------
 ttet=`uname -r`
 ReqPKG="linux-headers-$ttet"
-if ! dpkg -s $ReqPKG  >/dev/null 2>&1; then
-  rm /root/setup.sh >/dev/null 2>&1 
-  exit
+if dpkg -s "$ReqPKG" >/dev/null 2>&1; then
+  echo -e "[ ${green}INFO${NC} ] Kernel headers OK ($ReqPKG)"
 else
-  clear
+  echo -e "[ ${yell}WARNING${NC} ] $ReqPKG belum terpasang, mencoba memasang..."
+  apt-get update -y >/dev/null 2>&1
+  apt-get --yes install "$ReqPKG" >/dev/null 2>&1 || true
+  if dpkg -s "$ReqPKG" >/dev/null 2>&1; then
+    echo -e "[ ${green}INFO${NC} ] Kernel headers berhasil dipasang"
+  else
+    echo -e "[ ${yell}WARNING${NC} ] $ReqPKG tidak tersedia di repo."
+    echo -e "[ ${yell}WARNING${NC} ] Instalasi DILANJUTKAN tanpa kernel headers."
+    echo -e "[ ${yell}WARNING${NC} ] SSH/Xray/WebSocket tetap jalan."
+    echo -e "[ ${yell}WARNING${NC} ] Hanya fitur modul kernel (mis. WireGuard) yang tidak aktif."
+    sleep 3
+  fi
 fi
+clear
 
 
 secs_to_human() {
@@ -262,16 +294,28 @@ echo "IP=" >> /var/lib/yokkovpn-pro/ipvps.conf
 
 if [ -f "/etc/xray/domain" ]; then
 echo ""
-echo -e "[ ${green}INFO${NC} ] Script Already Installed"
-echo -ne "[ ${yell}WARNING${NC} ] Do you want to install again ? (y/n)? "
+echo -e "[ ${green}INFO${NC} ] Script Already Installed (ditemukan /etc/xray/domain)"
+echo -ne "[ ${yell}WARNING${NC} ] Install ulang? [y = ya / n = batal] : "
 read answer
-if [ "$answer" == "${answer#[Yy]}" ] ;then
-rm setup.sh
-sleep 10
-exit 0
-else
-clear
-fi
+case "$answer" in
+    [Yy]|[Yy][Ee][Ss])
+        echo -e "[ ${green}INFO${NC} ] Melanjutkan instalasi ulang..."
+        sleep 1
+        clear
+        ;;
+    [Nn]|[Nn][Oo])
+        echo -e "[ ${INFO} ] Dibatalkan oleh user."
+        echo -e "[ ${INFO} ] Script TIDAK dihapus, bisa dijalankan lagi kapan saja."
+        sleep 2
+        exit 0
+        ;;
+    *)
+        echo -e "[ ${yell}WARNING${NC} ] Jawaban '$answer' tidak dikenali."
+        echo -e "[ ${yell}WARNING${NC} ] Dibatalkan. Jalankan ulang dan jawab y atau n."
+        sleep 2
+        exit 0
+        ;;
+esac
 fi
 
 echo ""
