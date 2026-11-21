@@ -14,7 +14,7 @@ ipes=$(curl -sS ipv4.icanhazip.com)
 [[ ! -f /usr/bin/jq ]] && {
     red "Downloading jq file!"
     wget -q --no-check-certificate "https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64" -O /usr/bin/jq
-    chmod +x usr/bin/jq
+    chmod +x /usr/bin/jq
 }
 
 dircreate() {
@@ -56,15 +56,20 @@ EOF
 
 fun_bot1() {
 clear
-[[ ! -e "/etc/.maAsiss/.Shellbtsss" ]] && {
-wget -qO- https://raw.githubusercontent.com/artanodrop/bot_panel/main/BotAPI.sh >/etc/.maAsiss/.Shellbtsss
+if [[ ! -x /usr/bin/bbt ]]; then
+    wget -q --no-check-certificate -O /usr/bin/bbt "https://raw.githubusercontent.com/Masbrow33/dxavier/main/bot_panel/BotAPI.sh" 2>/dev/null
+    chmod +x /usr/bin/bbt
+    mkdir -p /etc/.maAsiss 2>/dev/null
+    touch /etc/.maAsiss/.Shellbtsss 2>/dev/null
+fi
+[[ "$(grep -wc "sam_bot" "/etc/rc.local" 2>/dev/null)" = '0' ]] && {
+    [ -f /etc/rc.local ] || printf '#!/bin/sh -e\nexit 0\n' > /etc/rc.local
+    sed -i '$ i\screen -dmS sam_bot bbt' /etc/rc.local >/dev/null 2>&1
+    chmod +x /etc/rc.local 2>/dev/null
 }
-[[ "$(grep -wc "sam_bot" "/etc/rc.local")" = '0' ]] && {
-sed -i '$ i\screen -dmS sam_bot bbt' /etc/rc.local >/dev/null 2>&1
 }
-}
-screen -dmS sam_bot bbt >/dev/null 2>&1
 fun_bot1
+screen -dmS sam_bot bbt >/dev/null 2>&1
 [[ $(ps x | grep "sam_bot" | grep -v grep | wc -l) != '0' ]] && {
 echo -e "$COLOR1━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$NC"
 echo -e "$COLBG1                  • BOT PANEL •                   $NC"

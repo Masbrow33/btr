@@ -25,4 +25,3 @@ echo -e "$COLOR1└────────────────────�
 echo -e ""
 read -n 1 -s -r -p "  Press any key to back on menu"
 menu-set
-esac
