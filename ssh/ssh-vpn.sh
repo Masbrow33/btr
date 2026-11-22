@@ -173,7 +173,18 @@ sed -i '/Port 22/a Port 51443' /etc/ssh/sshd_config
 sed -i '/Port 22/a Port 58080' /etc/ssh/sshd_config
 sed -i '/Port 22/a Port 200' /etc/ssh/sshd_config
 sed -i 's/#Port 22/Port 22/g' /etc/ssh/sshd_config
+
+# Ubuntu 24.04 mengaktifkan ssh.socket (socket activation). Saat socket
+# aktif, systemd yang memegang port 22 dan sshd TIDAK membaca direktif
+# "Port" di sshd_config — akibatnya port 200/500/40000/51443/58080 tidak
+# pernah terbuka meski tertulis di config, dan semua klien hanya bisa
+# masuk lewat port 22. Matikan socket, pakai service biasa.
+if systemctl list-unit-files 2>/dev/null | grep -q '^ssh.socket'; then
+    systemctl disable --now ssh.socket >/dev/null 2>&1 || true
+    systemctl enable ssh >/dev/null 2>&1 || true
+fi
 /etc/init.d/ssh restart
+sleep 2
 
 echo "=== Install Dropbear ==="
 # install dropbear
@@ -198,6 +209,7 @@ cd
 # install stunnel
 #apt install stunnel4 -y
 cat > /etc/stunnel/stunnel.conf <<-END
+pid = /var/run/stunnel4.pid
 cert = /etc/stunnel/stunnel.pem
 client = no
 socket = a:SO_REUSEADDR=1
@@ -222,13 +234,16 @@ connect = 127.0.0.1:1194
 
 END
 
-# stunnel butuh nama section unik. Versi lama memakai [dropbear] dua kali
-# sehingga stunnel menolak config dan service tidak pernah jalan.
-# JANGAN menambah "pid =" di sini: init script Debian membaca pidfile dari
-# config lalu gagal dengan "no pid=pidfile specified!" bila formatnya beda.
-# Biarkan init script memakai DEFAULTPIDFILE=/var/run/stunnel4.pid.
+# stunnel butuh nama section unik. Versi lama memakai [dropbear] dua kali.
+#
+# "pid =" WAJIB ada dan pathnya harus SAMA dengan DEFAULTPIDFILE di
+# /etc/init.d/stunnel4 (/var/run/stunnel4.pid). Init script memanggil
+# "start_daemon -p <pidfile>"; tanpa pid= stunnel tidak menulis pidfile,
+# start_daemon menganggap gagal, systemd menandai unit failed, TAPI proses
+# stunnel tetap jalan sebagai orphan dan memegang port 222/777/2096.
+# Gejalanya menyesatkan: port terbuka, tapi "systemctl is-active stunnel4"
+# bilang failed dan restart berikutnya ikut gagal.
 mkdir -p /var/run/stunnel4
-chown stunnel4:stunnel4 /var/run/stunnel4 2>/dev/null || true
 
 # Aktifkan stunnel secara eksplisit: tanpa ini port 222/777/2096 mati
 # setelah reboot.
@@ -239,7 +254,19 @@ else
     echo 'ENABLED=1' > /etc/default/stunnel4
 fi
 systemctl enable stunnel4 >/dev/null 2>&1 || true
+
+# Proses stunnel lama (dari percobaan start sebelumnya) bisa masih memegang
+# port 222/777 dan membuat restart gagal. Matikan dulu.
+pkill -9 -f "/usr/bin/stunnel4 /etc/stunnel/stunnel.conf" 2>/dev/null || true
+sleep 2
+rm -f /var/run/stunnel4.pid 2>/dev/null || true
+systemctl reset-failed stunnel4 >/dev/null 2>&1 || true
 systemctl restart stunnel4 >/dev/null 2>&1 || true
+sleep 2
+if ! systemctl is-active stunnel4 >/dev/null 2>&1; then
+    systemctl start stunnel4 >/dev/null 2>&1 || true
+    sleep 1
+fi
 
 # make a certificate
 openssl genrsa -out key.pem 2048
