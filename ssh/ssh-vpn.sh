@@ -290,6 +290,38 @@ chmod +x /etc/issue.net
 echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
 sed -i 's@DROPBEAR_BANNER=""@DROPBEAR_BANNER="/etc/issue.net"@g' /etc/default/dropbear
 
+# Tuning sshd untuk VPS kecil.
+# Default MaxStartups 10:30:100 terlalu ketat: 10 koneksi yang belum
+# terautentikasi sudah membuat sshd membuang koneksi baru
+# ("drop connection past MaxStartups"). Gejalanya membingungkan karena
+# TCP handshake tetap berhasil dan port terlihat terbuka, tapi SSH
+# tidak pernah mengirim banner -> klien timeout. GSSAPI dan reverse
+# DNS juga memperlambat banner, jadi dimatikan.
+sed -i '/^MaxStartups/d; /^MaxSessions/d; /^LoginGraceTime/d; /^UseDNS/d; /^GSSAPIAuthentication/d' /etc/ssh/sshd_config
+cat >> /etc/ssh/sshd_config <<'SSHEOF'
+
+# --- tuning untuk VPS kecil ---
+MaxStartups 50:30:200
+MaxSessions 30
+LoginGraceTime 60
+GSSAPIAuthentication no
+UseDNS no
+SSHEOF
+
+# Swap: VPS 1 GB RAM kehabisan memori saat banyak service jalan
+# (xray + squid + nginx + stunnel + python WS). Tanpa swap sistem
+# bisa macet total. Tambah 2 GB bila belum ada.
+if ! swapon --show 2>/dev/null | grep -q .; then
+    fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none
+    chmod 600 /swapfile
+    mkswap /swapfile >/dev/null 2>&1
+    swapon /swapfile
+    grep -q "^/swapfile" /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    sysctl -w vm.swappiness=20 >/dev/null 2>&1
+    grep -q "^vm.swappiness" /etc/sysctl.conf || echo 'vm.swappiness=20' >> /etc/sysctl.conf
+    echo -e "[ ${green}ok${NC} ] Swap 2 GB ditambahkan"
+fi
+
 # download script
 cd /usr/bin
 wget -q -O speedtest "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/speedtest_cli.py"
