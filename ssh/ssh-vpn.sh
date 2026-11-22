@@ -205,6 +205,11 @@ DBEOF
 # /etc/shells membengkak.
 grep -qxF '/bin/false' /etc/shells 2>/dev/null || echo "/bin/false" >> /etc/shells
 grep -qxF '/usr/sbin/nologin' /etc/shells 2>/dev/null || echo "/usr/sbin/nologin" >> /etc/shells
+# Rapikan duplikat yang mungkin sudah terlanjur ada dari instalasi lama.
+if [ -f /etc/shells ]; then
+    awk '!seen[$0]++' /etc/shells > /etc/shells.tmp && mv /etc/shells.tmp /etc/shells
+    chmod 644 /etc/shells
+fi
 /etc/init.d/ssh restart
 /etc/init.d/dropbear restart
 
@@ -325,13 +330,6 @@ echo -e "[ ${green}INFO$NC ] Settings banner"
 wget -q -O /etc/issue.net "https://raw.githubusercontent.com/Masbrow33/btr/main/issue.net"
 chmod +x /etc/issue.net
 
-# Idempoten: hapus dulu semua baris Banner, lalu tulis satu baris.
-# Dengan ">>" tanpa penjaga, instalasi kedua menghasilkan dua baris
-# "Banner /etc/issue.net". sshd memakai yang terakhir sehingga tetap
-# jalan, tapi konfigurasinya jadi berantakan dan sulit dibaca.
-sed -i '/^Banner[[:space:]]/d' /etc/ssh/sshd_config
-echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
-
 # Dropbear: hanya ganti kalau masih kosong. Kalau sudah terisi, biarkan —
 # supaya instalasi ulang tidak menumpuk.
 if grep -q '^DROPBEAR_BANNER=""' /etc/default/dropbear 2>/dev/null; then
@@ -348,11 +346,12 @@ grep -q '^DROPBEAR_BANNER=' /etc/default/dropbear 2>/dev/null || \
 # tidak pernah mengirim banner -> klien timeout. GSSAPI dan reverse
 # DNS juga memperlambat banner, jadi dimatikan.
 sed -i '/^MaxStartups/d; /^MaxSessions/d; /^LoginGraceTime/d; /^UseDNS/d; /^GSSAPIAuthentication/d' /etc/ssh/sshd_config
-# Hapus blok tuning lama memakai penanda akhir eksplisit.
-# JANGAN pakai rentang berhitung (,+5d): sed di atas sudah menghapus
-# isi blok, sehingga hitungan baris jadi meleset dan justru memakan
-# baris berikutnya (pernah menghapus "Banner /etc/issue.net").
-sed -i '/^# --- tuning untuk VPS kecil ---$/,/^# --- end tuning ---$/d' /etc/ssh/sshd_config
+# Hapus HANYA baris penanda komentar. Isi blok sudah dibuang oleh sed di
+# atas, jadi cukup buang penandanya. JANGAN pakai rentang seperti
+# '/awal/,/akhir/d': kalau penanda akhir belum ada (instalasi versi lama),
+# sed menganggap rentangnya sampai AKHIR FILE dan ikut menghapus baris
+# Banner yang baru ditulis. Ini pernah terjadi dan membuat banner hilang.
+sed -i '/^# --- tuning untuk VPS kecil ---$/d; /^# --- end tuning ---$/d' /etc/ssh/sshd_config
 cat >> /etc/ssh/sshd_config <<'SSHEOF'
 
 # --- tuning untuk VPS kecil ---
@@ -363,6 +362,11 @@ GSSAPIAuthentication no
 UseDNS no
 # --- end tuning ---
 SSHEOF
+
+# Banner ditulis PALING AKHIR, setelah semua sed selesai. Dengan urutan ini
+# tidak ada operasi berikutnya yang bisa menghapusnya.
+sed -i '/^Banner[[:space:]]/d' /etc/ssh/sshd_config
+echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
 
 # Swap: VPS 1 GB RAM kehabisan memori saat banyak service jalan
 # (xray + squid + nginx + stunnel + python WS). Tanpa swap sistem
