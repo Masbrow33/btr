@@ -6,9 +6,13 @@ NC="\e[0m"
 COLOR1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "TEXT" | cut -d: -f2|sed 's/ //g')"
 COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | cut -d: -f2|sed 's/ //g')"
 
-APIGIT=$(cat /etc/yokkovpn/github/api)
-EMAILGIT=$(cat /etc/yokkovpn/github/email)
-USERGIT=$(cat /etc/yokkovpn/github/username)
+# File config GitHub dibuat oleh menu-ip saat pertama kali dipakai.
+# Tanpa guard ini, membuka menu sebelum konfigurasi menghasilkan
+# "cat: No such file or directory" di layar.
+mkdir -p /etc/yokkovpn/github 2>/dev/null
+APIGIT=$(cat /etc/yokkovpn/github/api 2>/dev/null)
+EMAILGIT=$(cat /etc/yokkovpn/github/email 2>/dev/null)
+USERGIT=$(cat /etc/yokkovpn/github/username 2>/dev/null)
 
 
 function setapi(){
@@ -18,7 +22,7 @@ echo -e "$COLOR1│${NC} ${COLBG1}              • IPVPS GITHUB API •        
 echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
 echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
 
-if [[ -f /etc/yokkovpn/github/api && -f /etc/yokkovpn/github/email && /etc/yokkovpn/github/username ]]; then
+if [[ -f /etc/yokkovpn/github/api && -f /etc/yokkovpn/github/email && -f /etc/yokkovpn/github/username ]]; then
    rec="OK"
 else
     mkdir /etc/yokkovpn/github > /dev/null 2>&1
