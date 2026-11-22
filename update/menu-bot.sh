@@ -133,8 +133,6 @@ read -p " Select menu :  "  opt
 echo -e   ""
 case $opt in
 01 | 1) clear ; botonoff ;;
-02 | 2) clear ; menu2 ;;
-03 | 3) clear ; menu3 ;;
 00 | 0) clear ; menu ;;
 *) clear ; menu-bot ;;
 esac

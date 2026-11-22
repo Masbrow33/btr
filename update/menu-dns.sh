@@ -85,6 +85,66 @@ read -n 1 -s -r -p "   Press any key to back on menu"
 menu-dns 
 }
 
+# Cek konten: DNS aktif, resolv.conf, konektivitas
+function contentcek(){
+    clear
+    echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+    echo -e "$COLOR1│${NC} ${COLBG1}               • CONTENT CEK •                 ${NC} $COLOR1│$NC"
+    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+    echo -e "$COLOR1│${NC}"
+    echo -e "$COLOR1│${NC}  Domain    : ${GREEN}$(cat /etc/xray/domain 2>/dev/null || echo '-')${NC}"
+    echo -e "$COLOR1│${NC}  IP VPS    : ${GREEN}$(curl -s -m 8 https://ipinfo.io/ip 2>/dev/null || echo '-')${NC}"
+    if [ -f /root/dns ]; then
+        echo -e "$COLOR1│${NC}  DNS aktif : ${GREEN}$(cat /root/dns 2>/dev/null)${NC}"
+    else
+        echo -e "$COLOR1│${NC}  DNS aktif : ${GREEN}(default sistem)${NC}"
+    fi
+    echo -e "$COLOR1│${NC}"
+    echo -e "$COLOR1│${NC}  ${INFO} nameserver di /etc/resolv.conf:"
+    while IFS= read -r line; do
+        echo -e "$COLOR1│${NC}    $line"
+    done < <(grep -E "^nameserver" /etc/resolv.conf 2>/dev/null || echo "(kosong)")
+    echo -e "$COLOR1│${NC}"
+    echo -e "$COLOR1│${NC}  ${INFO} Uji resolve:"
+    for d in google.com cloudflare.com; do
+        if getent hosts "$d" >/dev/null 2>&1; then
+            echo -e "$COLOR1│${NC}    ${GREEN}OK${NC}  $d"
+        else
+            echo -e "$COLOR1│${NC}    ${RED}GAGAL${NC}  $d"
+        fi
+    done
+    echo -e "$COLOR1│${NC}"
+    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+    echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
+    echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
+    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+    echo -e ""
+    read -n 1 -s -r -p "   Press any key to back on menu"
+    menu-dns
+}
+
+# Reboot VPS dengan konfirmasi
+function doreboot(){
+    clear
+    echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+    echo -e "$COLOR1│${NC} ${COLBG1}                  • REBOOT •                   ${NC} $COLOR1│$NC"
+    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+    echo -e "$COLOR1│${NC}"
+    echo -e "$COLOR1│${NC}   ${YELLOW}VPS akan reboot sekarang.${NC}"
+    echo -e "$COLOR1│${NC}   Semua koneksi aktif akan terputus."
+    echo -e "$COLOR1│${NC}"
+    read -p "│   Lanjutkan reboot? [Y/N]: " -e answer
+    if [[ "$answer" = 'y' || "$answer" = 'Y' ]]; then
+        echo -e "$COLOR1│${NC}   ${INFO} Rebooting..."
+        sleep 2
+        reboot
+    else
+        echo -e "$COLOR1│${NC}   ${INFO} Dibatalkan."
+        sleep 2
+        menu-dns
+    fi
+}
+
 clear
 echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
 echo -e "$COLOR1│${NC} ${COLBG1}                 • USERS LOGS •                ${NC} $COLOR1│$NC"
@@ -112,10 +172,8 @@ echo -e   ""
 case $opt in
 01 | 1) clear ; setdns ;;
 02 | 2) clear ; resdns ;;
-03 | 3) clear ; delipvps ;;
-04 | 4) clear ; renewipvps ;;
-05 | 5) clear ; useripvps ;;
-06 | 6) clear ; $ressee ;;
+03 | 3) clear ; contentcek ;;
+04 | 4) clear ; doreboot ;;
 00 | 0) clear ; menu ;;
 *) clear ; menu-dns ;;
 esac
