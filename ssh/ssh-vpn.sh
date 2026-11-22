@@ -204,11 +204,11 @@ socket = a:SO_REUSEADDR=1
 socket = l:TCP_NODELAY=1
 socket = r:TCP_NODELAY=1
 
-[dropbear]
+[dropbear-222]
 accept = 222
 connect = 127.0.0.1:22
 
-[dropbear]
+[dropbear-777]
 accept = 777
 connect = 127.0.0.1:109
 
@@ -221,6 +221,16 @@ accept = 442
 connect = 127.0.0.1:1194
 
 END
+
+# stunnel butuh nama section unik. Versi lama memakai [dropbear] dua kali
+# sehingga stunnel menolak config dan service tidak pernah jalan.
+# Aktifkan stunnel secara eksplisit: tanpa ini port 222/777/2096 mati.
+if [ -f /etc/default/stunnel4 ]; then
+    sed -i 's/^ENABLED=0/ENABLED=1/' /etc/default/stunnel4
+    grep -q '^ENABLED=1' /etc/default/stunnel4 || echo 'ENABLED=1' >> /etc/default/stunnel4
+fi
+systemctl enable stunnel4 >/dev/null 2>&1 || true
+systemctl restart stunnel4 >/dev/null 2>&1 || true
 
 # make a certificate
 openssl genrsa -out key.pem 2048
