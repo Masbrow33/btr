@@ -327,8 +327,26 @@ echo 'Please send in your comments and/or suggestions to zaf@vsnl.com'
 # banner /etc/issue.net
 sleep 1
 echo -e "[ ${green}INFO$NC ] Settings banner"
+# PENTING soal banner: sshd meng-escape karakter non-printable di file
+# Banner. Kode warna ANSI (ESC[...m) TIDAK akan pernah tampil — selalu
+# muncul sebagai teks "\033[0;32m" sehingga banner terlihat rusak.
+# Ini perilaku bawaan OpenSSH, bukan bug script.
+# Karena itu issue.net HARUS memakai teks biasa + karakter kotak Unicode
+# (┌ ─ │ └), tanpa kode warna sama sekali.
+# Jangan tambahkan ANSI escape di issue.net walau terlihat lebih bagus
+# di terminal biasa.
 wget -q -O /etc/issue.net "https://raw.githubusercontent.com/Masbrow33/btr/main/issue.net"
 chmod +x /etc/issue.net
+
+# Jaring pengaman: kalau file dari repo ternyata mengandung ANSI/HTML,
+# bersihkan supaya banner tidak tampil berantakan.
+if grep -q $'\033' /etc/issue.net 2>/dev/null; then
+    sed -i 's/\x1b\[[0-9;]*m//g' /etc/issue.net
+fi
+if grep -q '<font\|<p style\|<br>' /etc/issue.net 2>/dev/null; then
+    # Versi lama menyimpan HTML; kalau masih terjadi, pakai banner cadangan.
+    sed -i 's/<[^>]*>//g' /etc/issue.net
+fi
 
 # Dropbear: hanya ganti kalau masih kosong. Kalau sudah terisi, biarkan —
 # supaya instalasi ulang tidak menumpuk.
