@@ -200,8 +200,11 @@ DROPBEAR_PORT=143
 DROPBEAR_EXTRA_ARGS="-p 109 -p 50000 -p 110 -p 69"
 DROPBEAR_RECEIVE_WINDOW=65536
 DBEOF
-echo "/bin/false" >> /etc/shells
-echo "/usr/sbin/nologin" >> /etc/shells
+# Idempoten: jalankan install berkali-kali tidak boleh menduplikasi baris.
+# Tanpa penjaga ini, setiap instalasi ulang menambah satu baris lagi dan
+# /etc/shells membengkak.
+grep -qxF '/bin/false' /etc/shells 2>/dev/null || echo "/bin/false" >> /etc/shells
+grep -qxF '/usr/sbin/nologin' /etc/shells 2>/dev/null || echo "/usr/sbin/nologin" >> /etc/shells
 /etc/init.d/ssh restart
 /etc/init.d/dropbear restart
 
@@ -269,10 +272,17 @@ if ! systemctl is-active stunnel4 >/dev/null 2>&1; then
 fi
 
 # make a certificate
+# Tulis ULANG (>) bukan tambahkan (>>). Dengan >>, instalasi kedua
+# menyisipkan key+cert lagi sehingga stunnel.pem berisi
+# key, cert, key, cert — file membengkak tiap kali install diulang.
+# Stunnel hanya membaca key dan cert pertama, jadi tetap jalan, tapi
+# isinya kacau dan makin besar.
 openssl genrsa -out key.pem 2048
 openssl req -new -x509 -key key.pem -out cert.pem -days 1095 \
 -subj "/C=$country/ST=$state/L=$locality/O=$organization/OU=$organizationalunit/CN=$commonname/emailAddress=$email"
-cat key.pem cert.pem >> /etc/stunnel/stunnel.pem
+mkdir -p /etc/stunnel
+cat key.pem cert.pem > /etc/stunnel/stunnel.pem
+chmod 600 /etc/stunnel/stunnel.pem
 
 # konfigurasi stunnel
 sed -i 's/ENABLED=0/ENABLED=1/g' /etc/default/stunnel4
@@ -314,8 +324,21 @@ sleep 1
 echo -e "[ ${green}INFO$NC ] Settings banner"
 wget -q -O /etc/issue.net "https://raw.githubusercontent.com/Masbrow33/btr/main/issue.net"
 chmod +x /etc/issue.net
+
+# Idempoten: hapus dulu semua baris Banner, lalu tulis satu baris.
+# Dengan ">>" tanpa penjaga, instalasi kedua menghasilkan dua baris
+# "Banner /etc/issue.net". sshd memakai yang terakhir sehingga tetap
+# jalan, tapi konfigurasinya jadi berantakan dan sulit dibaca.
+sed -i '/^Banner[[:space:]]/d' /etc/ssh/sshd_config
 echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
-sed -i 's@DROPBEAR_BANNER=""@DROPBEAR_BANNER="/etc/issue.net"@g' /etc/default/dropbear
+
+# Dropbear: hanya ganti kalau masih kosong. Kalau sudah terisi, biarkan —
+# supaya instalasi ulang tidak menumpuk.
+if grep -q '^DROPBEAR_BANNER=""' /etc/default/dropbear 2>/dev/null; then
+    sed -i 's@DROPBEAR_BANNER=""@DROPBEAR_BANNER="/etc/issue.net"@' /etc/default/dropbear
+fi
+grep -q '^DROPBEAR_BANNER=' /etc/default/dropbear 2>/dev/null || \
+    echo 'DROPBEAR_BANNER="/etc/issue.net"' >> /etc/default/dropbear
 
 # Tuning sshd untuk VPS kecil.
 # Default MaxStartups 10:30:100 terlalu ketat: 10 koneksi yang belum
@@ -325,6 +348,11 @@ sed -i 's@DROPBEAR_BANNER=""@DROPBEAR_BANNER="/etc/issue.net"@g' /etc/default/dr
 # tidak pernah mengirim banner -> klien timeout. GSSAPI dan reverse
 # DNS juga memperlambat banner, jadi dimatikan.
 sed -i '/^MaxStartups/d; /^MaxSessions/d; /^LoginGraceTime/d; /^UseDNS/d; /^GSSAPIAuthentication/d' /etc/ssh/sshd_config
+# Hapus blok tuning lama memakai penanda akhir eksplisit.
+# JANGAN pakai rentang berhitung (,+5d): sed di atas sudah menghapus
+# isi blok, sehingga hitungan baris jadi meleset dan justru memakan
+# baris berikutnya (pernah menghapus "Banner /etc/issue.net").
+sed -i '/^# --- tuning untuk VPS kecil ---$/,/^# --- end tuning ---$/d' /etc/ssh/sshd_config
 cat >> /etc/ssh/sshd_config <<'SSHEOF'
 
 # --- tuning untuk VPS kecil ---
@@ -333,6 +361,7 @@ MaxSessions 30
 LoginGraceTime 60
 GSSAPIAuthentication no
 UseDNS no
+# --- end tuning ---
 SSHEOF
 
 # Swap: VPS 1 GB RAM kehabisan memori saat banyak service jalan
@@ -491,7 +520,8 @@ screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7700 --max-clients 500
 screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7800 --max-clients 500
 screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7900 --max-clients 500
 history -c
-echo "unset HISTFILE" >> /etc/profile
+# Idempoten: jangan tambah baris berulang di /etc/profile.
+grep -qxF 'unset HISTFILE' /etc/profile 2>/dev/null || echo "unset HISTFILE" >> /etc/profile
 
 
 rm -f /root/key.pem
