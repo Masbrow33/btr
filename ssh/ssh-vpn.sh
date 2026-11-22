@@ -224,10 +224,19 @@ END
 
 # stunnel butuh nama section unik. Versi lama memakai [dropbear] dua kali
 # sehingga stunnel menolak config dan service tidak pernah jalan.
-# Aktifkan stunnel secara eksplisit: tanpa ini port 222/777/2096 mati.
+# JANGAN menambah "pid =" di sini: init script Debian membaca pidfile dari
+# config lalu gagal dengan "no pid=pidfile specified!" bila formatnya beda.
+# Biarkan init script memakai DEFAULTPIDFILE=/var/run/stunnel4.pid.
+mkdir -p /var/run/stunnel4
+chown stunnel4:stunnel4 /var/run/stunnel4 2>/dev/null || true
+
+# Aktifkan stunnel secara eksplisit: tanpa ini port 222/777/2096 mati
+# setelah reboot.
 if [ -f /etc/default/stunnel4 ]; then
     sed -i 's/^ENABLED=0/ENABLED=1/' /etc/default/stunnel4
     grep -q '^ENABLED=1' /etc/default/stunnel4 || echo 'ENABLED=1' >> /etc/default/stunnel4
+else
+    echo 'ENABLED=1' > /etc/default/stunnel4
 fi
 systemctl enable stunnel4 >/dev/null 2>&1 || true
 systemctl restart stunnel4 >/dev/null 2>&1 || true
