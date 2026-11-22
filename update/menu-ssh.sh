@@ -1,12 +1,14 @@
 #!/bin/bash
+[ -f /usr/local/lib/vpsbox.sh ] && . /usr/local/lib/vpsbox.sh && vpsbox_init
 dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
 ###########- COLOR CODE -##############
 colornow=$(cat /etc/yokkovpn/theme/color.conf)
 NC="\e[0m"
 RED="\033[0;31m" 
-COLOR1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "TEXT" | cut -d: -f2|sed 's/ //g')"
-COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | cut -d: -f2|sed 's/ //g')"                    
+COLOR1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "TEXT" | head -1 | cut -d: -f2|sed 's/ //g')"
+COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | head -1 | cut -d: -f2|sed 's/ //g')"                    
+vpsbox_init
 ###########- END COLOR CODE -##########
 
 
@@ -16,10 +18,10 @@ domen=`cat /etc/xray/domain`
 portsshws=`cat ~/log-install.txt | grep -w "SSH Websocket" | cut -d: -f2 | awk '{print $1}'`
 wsssl=`cat /root/log-install.txt | grep -w "SSH SSL Websocket" | cut -d: -f2 | awk '{print $1}'`
 
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}               • SSH PANEL MENU •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• SSH PANEL MENU •"
+_box_bot
+_box_top
 read -p "   Username : " Login
 
 CEKFILE=/etc/xray/ssh.txt
@@ -30,11 +32,9 @@ touch /etc/xray/ssh.txt
 fi
 
 if grep -qw "$Login" /etc/xray/ssh.txt; then
-echo -e "$COLOR1│${NC}  [Error] Username \e[31m$Login\e[0m already exist"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[Error] Username \e[31m$Login\e[0m already exist"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "  Press any key to back on menu"
 menu-ssh
@@ -43,11 +43,9 @@ echo "$Login" >> /etc/xray/ssh.txt
 fi
 
 if [ -z $Login ]; then
-echo -e "$COLOR1│${NC} [Error] Username cannot be empty "
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[Error] Username cannot be empty"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "    Press any key to back on menu"
 menu-ssh
@@ -55,22 +53,18 @@ fi
 
 read -p "   Password : " Pass
 if [ -z $Pass ]; then
-echo -e "$COLOR1│${NC}  [Error] Password cannot be empty "
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[Error] Password cannot be empty"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ssh
 fi
 read -p "   Expired (hari): " masaaktif
 if [ -z $masaaktif ]; then
-echo -e "$COLOR1│${NC}  [Error] EXP Date cannot be empty "
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[Error] EXP Date cannot be empty"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "  Press any key to back on menu"
 menu-ssh
@@ -97,55 +91,51 @@ echo -e "$Pass\n$Pass\n"|passwd $Login &> /dev/null
 PID=`ps -ef |grep -v grep | grep sshws |awk '{print $2}'`
 
 if [[ ! -z "${PID}" ]]; then
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}               • SSH PANEL MENU •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│$NC  Username   : $Login" 
-echo -e "$COLOR1│$NC  Password   : $Pass"
-echo -e "$COLOR1│$NC  Expired On : $exp" 
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│$NC  IP         : $IP" 
-echo -e "$COLOR1│$NC  Host       : $domen" 
-echo -e "$COLOR1│$NC  OpenSSH    : $opensh"
-echo -e "$COLOR1│$NC  Dropbear   : $db" 
-echo -e "$COLOR1│$NC  SSH-WS     : $portsshws" 
-echo -e "$COLOR1│$NC  SSH-SSL-WS : $wsssl" 
-echo -e "$COLOR1│$NC  SSL/TLS    :$ssl" 
-echo -e "$COLOR1│$NC  UDPGW      : 7100-7300" 
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• SSH PANEL MENU •"
+_box_bot
+_box_top
+_bline "Username   : $Login"
+_bline "Password   : $Pass"
+_bline "Expired On : $exp"
+_box_bot
+_box_top
+_bline "IP         : $IP"
+_bline "Host       : $domen"
+_bline "OpenSSH    : $opensh"
+_bline "Dropbear   : $db"
+_bline "SSH-WS     : $portsshws"
+_bline "SSH-SSL-WS : $wsssl"
+_bline "SSL/TLS    :$ssl"
+_bline "UDPGW      : 7100-7300"
+_box_bot
+_box_top
 echo -e "  GET wss://$domen/ HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 else
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}               • SSH PANEL MENU •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│$NC  Username   : $Login" 
-echo -e "$COLOR1│$NC  Password   : $Pass"
-echo -e "$COLOR1│$NC  Expired On : $exp" 
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│$NC  IP         : $IP" 
-echo -e "$COLOR1│$NC  Host       : $domen" 
-echo -e "$COLOR1│$NC  OpenSSH    : $opensh"
-echo -e "$COLOR1│$NC  Dropbear   : $db" 
-echo -e "$COLOR1│$NC  SSH-WS     : $portsshws" 
-echo -e "$COLOR1│$NC  SSH-SSL-WS : $wsssl" 
-echo -e "$COLOR1│$NC  SSL/TLS    :$ssl" 
-echo -e "$COLOR1│$NC  UDPGW      : 7100-7300" 
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• SSH PANEL MENU •"
+_box_bot
+_box_top
+_bline "Username   : $Login"
+_bline "Password   : $Pass"
+_bline "Expired On : $exp"
+_box_bot
+_box_top
+_bline "IP         : $IP"
+_bline "Host       : $domen"
+_bline "OpenSSH    : $opensh"
+_bline "Dropbear   : $db"
+_bline "SSH-WS     : $portsshws"
+_bline "SSH-SSL-WS : $wsssl"
+_bline "SSL/TLS    :$ssl"
+_bline "UDPGW      : 7100-7300"
+_box_bot
+_box_top
 echo -e "  GET wss://$domen/ HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 fi
 echo -e ""
 read -n 1 -s -r -p "  Press any key to back on menu"
@@ -179,22 +169,20 @@ fi
 
 function start() {
         clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}               • WEBSOCKET MENU •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}" 
+_box_top
+_bcenter "• WEBSOCKET MENU •"
+_box_bot
+_box_top
 wget -q -O /usr/bin/ssh-wsenabler "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/sshws-true.sh" && chmod +x /usr/bin/ssh-wsenabler
 systemctl daemon-reload >/dev/null 2>&1
 systemctl enable sshws.service >/dev/null 2>&1
 systemctl start sshws.service >/dev/null 2>&1
 sed -i "/SSH Websocket/c\   - SSH Websocket           : $portsshws [ON]" /root/log-install.txt
-echo -e "$COLOR1│${NC}  [INFO] • ${green}SSH Websocket Started${NC}"
-echo -e "$COLOR1│${NC}  [INFO] • Restart is require for Changes"
-echo -e "$COLOR1│${NC}           to take effect"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[INFO] • ${green}SSH Websocket Started${NC}"
+_bline "[INFO] • Restart is require for Changes"
+_bline "to take effect"
+_box_bot
+_byline
 echo -e ""
 read -n 1 -s -r -p "  Press any key to back on menu"
 sshwss 
@@ -202,44 +190,40 @@ sshwss
 
 function stop() {
         clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}               • WEBSOCKET MENU •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}" 
+_box_top
+_bcenter "• WEBSOCKET MENU •"
+_box_bot
+_box_top
 systemctl stop sshws.service >/dev/null 2>&1
 tmux kill-session -t sshws >/dev/null 2>&1
 sed -i "/SSH Websocket/c\   - SSH Websocket           : $portsshws [OFF]" /root/log-install.txt
-echo -e "$COLOR1│${NC}  [INFO] • ${red}SSH Websocket Stopped${NC}"
-echo -e "$COLOR1│${NC}  [INFO] • Restart is require for Changes"
-echo -e "$COLOR1│${NC}           to take effect"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[INFO] • ${red}SSH Websocket Stopped${NC}"
+_bline "[INFO] • Restart is require for Changes"
+_bline "to take effect"
+_box_bot
+_byline
 echo -e ""
 read -n 1 -s -r -p "  Press any key to back on menu"
 sshwss 
 }
 
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}               • WEBSOCKET MENU •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• WEBSOCKET MENU •"
+_box_bot
+_box_top
 PID=`ps -ef |grep -v grep | grep sshws |awk '{print $2}'`
 if [[ ! -z "${PID}" ]]; then
-echo -e "$COLOR1│$NC   • Websocket Is ${COLOR1}Running$NC"
+_bline "• Websocket Is ${COLOR1}Running$NC"
 else
-echo -e "$COLOR1│$NC   • Websocket Is ${red}Not Running$NC"
+_bline "• Websocket Is ${red}Not Running$NC"
 fi
-echo -e "$COLOR1│$NC"  
-echo -e "$COLOR1│$NC   ${COLOR1}[01]${NC} • Enable SSH WS   ${COLOR1}[02]${NC} • Disable SSH WS"
-echo -e "$COLOR1│$NC"  
-echo -e "$COLOR1│$NC   ${COLOR1}[00]${NC} • GO BACK"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline ""
+_bmenu2 "01" "Enable SSH WS" "02" "Disable SSH WS"
+_bline ""
+_bmenu1 "00" "GO BACK"
+_box_bot
+_byline
 echo ""
 read -p " Select menu :  "  opt
 echo -e ""
@@ -253,10 +237,10 @@ esac
 function cekssh(){
 
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}              • SSH ACTIVE USERS •             ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• SSH ACTIVE USERS •"
+_box_bot
+_box_top
 echo -e ""
 
 if [ -e "/var/log/auth.log" ]; then
@@ -314,10 +298,8 @@ rm -f /tmp/login-db-pid.txt
 rm -f /tmp/login-db.txt
 rm -f /tmp/vpn-login-tcp.txt
 rm -f /tmp/vpn-login-udp.txt
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 echo "";
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ssh
@@ -325,10 +307,10 @@ menu-ssh
 
 function delssh(){
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}              • SSH DELETE USERS •             ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• SSH DELETE USERS •"
+_box_bot
+_box_top
 read -p "   Username : " Pengguna
 
 if [ -z $Pengguna ]; then
@@ -342,10 +324,8 @@ else
 echo -e "   [INFO] Failure: User $Pengguna Not Exist."
 fi
 fi
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 echo -e ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ssh
@@ -353,31 +333,27 @@ menu-ssh
 
 function renewssh(){
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • RENEW SSH ACCOUNT •             ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• RENEW SSH ACCOUNT •"
+_box_bot
+_box_top
 read -p "   Username : " User
 
 if getent passwd $User > /dev/null 2>&1; then
 ok="ok"
 else
-echo -e "$COLOR1│${NC}   [INFO] Failure: User $User Not Exist."
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[INFO] Failure: User $User Not Exist."
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu
 fi
 
 if [ -z $User ]; then
-echo -e "$COLOR1│${NC}   [Error] Username cannot be empty "
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[Error] Username cannot be empty"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu
@@ -399,28 +375,24 @@ usermod -e  $Expiration $User
 egrep "^$User" /etc/passwd >/dev/null
 echo -e "$Pass\n$Pass\n"|passwd $User &> /dev/null
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • RENEW SSH ACCOUNT •             ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• RENEW SSH ACCOUNT •"
+_box_bot
+_box_top
 echo -e "   Username   : $User"
 echo -e "   Days Added : $Days Days"
 echo -e "   Expires on : $Expiration_Display"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 else
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • RENEW SSH ACCOUNT •             ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• RENEW SSH ACCOUNT •"
+_box_bot
+_box_top
 echo -e "   Username Doesnt Exist      "
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 fi
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
@@ -430,13 +402,13 @@ menu-ssh
 
 function memberssh(){
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • RENEW SSH ACCOUNT •             ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"    
+_box_top
+_bcenter "• RENEW SSH ACCOUNT •"
+_box_bot
+_box_top
 echo "   USERNAME          EXP DATE          STATUS"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"  
+_box_bot
+_box_top
 while read expired
 do
 AKUN="$(echo $expired | cut -d: -f1)"
@@ -452,13 +424,11 @@ fi
 fi
 done < /etc/passwd
 JUMLAH="$(awk -F: '$3 >= 1000 && $1 != "nobody" {print $1}' /etc/passwd | wc -l)"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"  
+_box_bot
+_box_top
 echo "   Total: $JUMLAH User"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ssh
@@ -493,77 +463,71 @@ echo -e "$Pass\n$Pass\n"|passwd $Login &> /dev/null
 PID=`ps -ef |grep -v grep | grep sshws |awk '{print $2}'`
 
 if [[ ! -z "${PID}" ]]; then
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}            • SSH TRIAL ACCOUNT •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│$NC  Username   : $Login" 
-echo -e "$COLOR1│$NC  Password   : $Pass"
-echo -e "$COLOR1│$NC  Expired On : $exp" 
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│$NC  IP         : $IP" 
-echo -e "$COLOR1│$NC  Host       : $domen" 
-echo -e "$COLOR1│$NC  OpenSSH    : $opensh"
-echo -e "$COLOR1│$NC  Dropbear   : $db" 
-echo -e "$COLOR1│$NC  SSH-WS     : $portsshws" 
-echo -e "$COLOR1│$NC  SSH-SSL-WS : $wsssl" 
-echo -e "$COLOR1│$NC  SSL/TLS    :$ssl" 
-echo -e "$COLOR1│$NC  UDPGW      : 7100-7300" 
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• SSH TRIAL ACCOUNT •"
+_box_bot
+_box_top
+_bline "Username   : $Login"
+_bline "Password   : $Pass"
+_bline "Expired On : $exp"
+_box_bot
+_box_top
+_bline "IP         : $IP"
+_bline "Host       : $domen"
+_bline "OpenSSH    : $opensh"
+_bline "Dropbear   : $db"
+_bline "SSH-WS     : $portsshws"
+_bline "SSH-SSL-WS : $wsssl"
+_bline "SSL/TLS    :$ssl"
+_bline "UDPGW      : 7100-7300"
+_box_bot
+_box_top
 echo -e "  GET wss://$domen/ HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 
 else
 
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}            • SSH TRIAL ACCOUNT •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│$NC  Username   : $Login" 
-echo -e "$COLOR1│$NC  Password   : $Pass"
-echo -e "$COLOR1│$NC  Expired On : $exp" 
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│$NC  IP         : $IP" 
-echo -e "$COLOR1│$NC  Host       : $domen" 
-echo -e "$COLOR1│$NC  OpenSSH    : $opensh"
-echo -e "$COLOR1│$NC  Dropbear   : $db" 
-echo -e "$COLOR1│$NC  SSH-WS     : $portsshws" 
-echo -e "$COLOR1│$NC  SSH-SSL-WS : $wsssl" 
-echo -e "$COLOR1│$NC  SSL/TLS    :$ssl" 
-echo -e "$COLOR1│$NC  UDPGW      : 7100-7300" 
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}  GET wss://$domen/ HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• SSH TRIAL ACCOUNT •"
+_box_bot
+_box_top
+_bline "Username   : $Login"
+_bline "Password   : $Pass"
+_bline "Expired On : $exp"
+_box_bot
+_box_top
+_bline "IP         : $IP"
+_bline "Host       : $domen"
+_bline "OpenSSH    : $opensh"
+_bline "Dropbear   : $db"
+_bline "SSH-WS     : $portsshws"
+_bline "SSH-SSL-WS : $wsssl"
+_bline "SSL/TLS    :$ssl"
+_bline "UDPGW      : 7100-7300"
+_box_bot
+_box_top
+_bline "GET wss://$domen/ HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
+_box_bot
+_byline
 fi
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ssh
 }
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}               • SSH PANEL MENU •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e " $COLOR1┌───────────────────────────────────────────────┐${NC}
- $COLOR1│$NC   ${COLOR1}[01]${NC} • ADD SSH         ${COLOR1}[05]${NC} • DELETE SSH${NC}    $COLOR1│$NC
- $COLOR1│$NC   ${COLOR1}[02]${NC} • TRIAL SSH       ${COLOR1}[06]${NC} • RENEW SSH${NC}     $COLOR1│$NC
- $COLOR1│$NC   ${COLOR1}[03]${NC} • USER ONLINE     ${COLOR1}[07]${NC} • USERS LIST${NC}    $COLOR1│$NC
- $COLOR1│$NC   ${COLOR1}[04]${NC} • ENABLE WS                            $COLOR1│$NC
- $COLOR1│$NC                                              ${NC} $COLOR1│$NC
- $COLOR1│$NC   ${COLOR1}[00]${NC} • GO BACK${NC}                              $COLOR1│$NC"
-echo -e " $COLOR1└───────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• SSH PANEL MENU •"
+_box_bot
+_box_top
+_bmenu2 "01" "ADD SSH" "05" "DELETE SSH"
+_bmenu2 "02" "TRIAL SSH" "06" "RENEW SSH"
+_bmenu2 "03" "USER ONLINE" "07" "USERS LIST"
+_bmenu1 "04" "ENABLE WS"
+_bline ""
+_bmenu1 "00" "GO BACK"
+_box_bot
+_byline
 echo -e ""
 read -p " Select menu :  "  opt
 echo -e ""

@@ -1,12 +1,14 @@
 #!/bin/bash
+[ -f /usr/local/lib/vpsbox.sh ] && . /usr/local/lib/vpsbox.sh && vpsbox_init
 dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
 ###########- COLOR CODE -##############
 colornow=$(cat /etc/yokkovpn/theme/color.conf)
 NC="\e[0m"
 RED="\033[0;31m" 
-COLOR1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "TEXT" | cut -d: -f2|sed 's/ //g')"
-COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | cut -d: -f2|sed 's/ //g')"                    
+COLOR1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "TEXT" | head -1 | cut -d: -f2|sed 's/ //g')"
+COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | head -1 | cut -d: -f2|sed 's/ //g')"                    
+vpsbox_init
 ###########- END COLOR CODE -##########
 
 
@@ -14,19 +16,17 @@ function addssws(){
 clear
 domain=$(cat /etc/xray/domain)
 
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • CREATE SSWS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• CREATE SSWS USER •"
+_box_bot
+_box_top
 tls="$(cat ~/log-install.txt | grep -w "Sodosok WS/GRPC" | cut -d: -f2|sed 's/ //g')"
 until [[ $user =~ ^[a-zA-Z0-9_]+$ && ${CLIENT_EXISTS} == '0' ]]; do
 read -rp "   Input Username : " -e user
 if [ -z $user ]; then
-echo -e "$COLOR1│${NC} [Error] Username cannot be empty "
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[Error] Username cannot be empty"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu
@@ -35,15 +35,13 @@ CLIENT_EXISTS=$(grep -w $user /etc/xray/config.json | wc -l)
 
 if [[ ${CLIENT_EXISTS} == '1' ]]; then
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • CREATE SSWS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} Please choose another name."
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• CREATE SSWS USER •"
+_box_bot
+_box_top
+_bline "Please choose another name."
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ss
@@ -285,33 +283,31 @@ END
 systemctl restart xray > /dev/null 2>&1
 service cron restart > /dev/null 2>&1
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • CREATE SSWS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} Remarks     : ${user}" 
-echo -e "$COLOR1│${NC} Expired On  : $exp"  
-echo -e "$COLOR1│${NC} Domain      : ${domain}"  
-echo -e "$COLOR1│${NC} Port TLS    : ${tls}"  
-echo -e "$COLOR1│${NC} Port  GRPC  : ${tls}" 
-echo -e "$COLOR1│${NC} Password    : ${uuid}"  
-echo -e "$COLOR1│${NC} Cipers      : aes-128-gcm"  
-echo -e "$COLOR1│${NC} Network     : ws/grpc"  
-echo -e "$COLOR1│${NC} Path        : /ss-ws"  
-echo -e "$COLOR1│${NC} ServiceName : ss-grpc"  
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} Link TLS : "
-echo -e "$COLOR1│${NC} ${shadowsockslink}"  
-echo -e "$COLOR1│${NC} "
-echo -e "$COLOR1│${NC} Link GRPC : "
-echo -e "$COLOR1│${NC} ${shadowsockslink1}"  
-echo -e "$COLOR1│${NC} "
-echo -e "$COLOR1│${NC} Link JSON : http://${domain}:81/ss-ws/ss-$user.txt"  
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• CREATE SSWS USER •"
+_box_bot
+_box_top
+_bline "Remarks     : ${user}"
+_bline "Expired On  : $exp"
+_bline "Domain      : ${domain}"
+_bline "Port TLS    : ${tls}"
+_bline "Port  GRPC  : ${tls}"
+_bline "Password    : ${uuid}"
+_bline "Cipers      : aes-128-gcm"
+_bline "Network     : ws/grpc"
+_bline "Path        : /ss-ws"
+_bline "ServiceName : ss-grpc"
+_box_bot
+_box_top
+_bline "Link TLS :"
+_bline "${shadowsockslink}"
+_bline ""
+_bline "Link GRPC :"
+_bline "${shadowsockslink1}"
+_bline ""
+_bline "Link JSON : http://${domain}:81/ss-ws/ss-$user.txt"
+_box_bot
+_byline
 echo ""  
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ss
@@ -319,33 +315,29 @@ menu-ss
 
 function renewssws(){
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}              • RENEW SSWS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• RENEW SSWS USER •"
+_box_bot
+_box_top
 NUMBER_OF_CLIENTS=$(grep -c -E "^## " "/etc/xray/config.json")
 if [[ ${NUMBER_OF_CLIENTS} == '0' ]]; then
-echo -e "$COLOR1│${NC}  • You have no existing clients!"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "• You have no existing clients!"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ss
 fi
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}              • RENEW SSWS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• RENEW SSWS USER •"
+_box_bot
+_box_top
 grep -E "^## " "/etc/xray/config.json" | cut -d ' ' -f 2-3 | column -t | sort | uniq | nl
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC}  • [NOTE] Press any key to back on menu"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline ""
+_bline "• [NOTE] Press any key to back on menu"
+_box_bot
+_byline
 echo -e "$COLOR1───────────────────────────────────────────────────${NC}"
 read -rp "   Input Username : " user
 if [ -z $user ]; then
@@ -365,19 +357,17 @@ exp4=`date -d "$exp3 days" +"%Y-%m-%d"`
 sed -i "/## $user/c\## $user $exp4" /etc/xray/config.json
 systemctl restart xray > /dev/null 2>&1
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}              • RENEW SSWS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}   [INFO]  $user Account Renewed Successfully"
-echo -e "$COLOR1│${NC}   "
-echo -e "$COLOR1│${NC}   Client Name : $user"
-echo -e "$COLOR1│${NC}   Days Added  : $masaaktif Days"
-echo -e "$COLOR1│${NC}   Expired On  : $exp4"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• RENEW SSWS USER •"
+_box_bot
+_box_top
+_bline "[INFO]  $user Account Renewed Successfully"
+_bline ""
+_bline "Client Name : $user"
+_bline "Days Added  : $masaaktif Days"
+_bline "Expired On  : $exp4"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ss
@@ -388,28 +378,26 @@ function delssws(){
     clear
 NUMBER_OF_CLIENTS=$(grep -c -E "^## " "/etc/xray/config.json")
 if [[ ${NUMBER_OF_CLIENTS} == '0' ]]; then
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}           • DELETE TROJAN USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}  • You Dont have any existing clients!"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• DELETE TROJAN USER •"
+_box_bot
+_box_top
+_bline "• You Dont have any existing clients!"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ss
 fi
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}           • DELETE TROJAN USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• DELETE TROJAN USER •"
+_box_bot
+_box_top
 grep -E "^## " "/etc/xray/config.json" | cut -d ' ' -f 2-3 | column -t | sort | uniq | nl
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC}  • [NOTE] Press any key to back on menu"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+_bline ""
+_bline "• [NOTE] Press any key to back on menu"
+_box_bot
 echo -e "$COLOR1───────────────────────────────────────────────────${NC}"
 read -rp "   Input Username : " user
 if [ -z $user ]; then
@@ -420,18 +408,16 @@ sed -i "/^## $user $exp/,/^},{/d" /etc/xray/config.json
 systemctl restart xray > /dev/null 2>&1
 rm /home/vps/public_html/ss-ws/ss-$user.txt
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}           • DELETE TROJAN USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}   • Accound Delete Successfully"
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC}   • Client Name : $user"
-echo -e "$COLOR1│${NC}   • Expired On  : $exp"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• DELETE TROJAN USER •"
+_box_bot
+_box_top
+_bline "• Accound Delete Successfully"
+_bline ""
+_bline "• Client Name : $user"
+_bline "• Expired On  : $exp"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ss
@@ -442,10 +428,10 @@ function cekssws(){
 clear
 echo -n > /tmp/other.txt
 data=( `cat /etc/xray/config.json | grep '^##' | cut -d ' ' -f 2 | sort | uniq`);
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • SSWS USER ONLINE •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• SSWS USER ONLINE •"
+_box_bot
+_box_top
 
 for akun in "${data[@]}"
 do
@@ -473,35 +459,31 @@ if [[ -z "$jum" ]]; then
 echo > /dev/null
 else
 jum2=$(cat /tmp/ipssws.txt | nl)
-echo -e "$COLOR1│${NC}   user : $akun";
-echo -e "$COLOR1│${NC}   $jum2";
+_bline "user : $akun"
+_bline "$jum2"
 fi
 rm -rf /tmp/ipssws.txt
 done
 
 rm -rf /tmp/other.txt
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-ss
 }
 
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}              • SSWS PANEL MENU •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e " $COLOR1┌───────────────────────────────────────────────┐${NC}"
-echo -e " $COLOR1│$NC   ${COLOR1}[01]${NC} • ADD SSWS      ${COLOR1}[03]${NC} • DELETE SSWS${NC}     $COLOR1│$NC"
-echo -e " $COLOR1│$NC   ${COLOR1}[02]${NC} • RENEW SSWS${NC}    ${COLOR1}[04]${NC} • USER ONLINE     $COLOR1│$NC"
-echo -e " $COLOR1│$NC                                              ${NC} $COLOR1│$NC"
-echo -e " $COLOR1│$NC   ${COLOR1}[00]${NC} • GO BACK${NC}                              $COLOR1│$NC"
-echo -e " $COLOR1└───────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• SSWS PANEL MENU •"
+_box_bot
+_box_top
+_bmenu2 "01" "ADD SSWS" "03" "DELETE SSWS"
+_bmenu2 "02" "RENEW SSWS" "04" "USER ONLINE"
+_bline ""
+_bmenu1 "00" "GO BACK"
+_box_bot
+_byline
 echo -e ""
 read -p " Select menu :  "  opt
 echo -e ""

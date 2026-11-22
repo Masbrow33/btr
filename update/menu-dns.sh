@@ -1,10 +1,12 @@
 #!/bin/bash
+[ -f /usr/local/lib/vpsbox.sh ] && . /usr/local/lib/vpsbox.sh && vpsbox_init
 MYIP=$(wget -qO- ipinfo.io/ip);
 
 colornow=$(cat /etc/yokkovpn/theme/color.conf)
 NC="\e[0m"
-COLOR1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "TEXT" | cut -d: -f2|sed 's/ //g')"
-COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | cut -d: -f2|sed 's/ //g')"
+COLOR1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "TEXT" | head -1 | cut -d: -f2|sed 's/ //g')"
+COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | head -1 | cut -d: -f2|sed 's/ //g')"
+vpsbox_init
 
 # File config GitHub dibuat oleh menu-ip saat pertama kali dipakai.
 # Tanpa guard ini, membuka menu sebelum konfigurasi menghasilkan
@@ -22,36 +24,32 @@ export INFO="[${GREEN}INFO${NC}]";
 
 function setdns(){
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}                 • USERS LOGS •                ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• USERS LOGS •"
+_box_bot
+_box_top
 read -p "│  DNS : " setdnss
 
 if [ -z $setdnss ]; then
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC}  ${ERROR} DNS Cannot Be Empty";
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline ""
+_bline "${ERROR} DNS Cannot Be Empty"
+_box_bot
+_byline
 echo -e ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-dns 
 else
 echo "$setdnss" > /root/dns
-echo -e "$COLOR1│${NC}  ${INFO} Copy DNS To Resolv.conf";
+_bline "${INFO} Copy DNS To Resolv.conf"
 echo "nameserver $setdnss" > /etc/resolv.conf
 sleep 2
-echo -e "$COLOR1│${NC}  ${INFO} Copy DNS To Resolv.conf.d/head";
+_bline "${INFO} Copy DNS To Resolv.conf.d/head"
 echo "nameserver $setdnss" > /etc/resolvconf/resolv.conf.d/head
 sleep 2
-echo -e "$COLOR1│${NC}  ${INFO} DNS Update Successfully";
+_bline "${INFO} DNS Update Successfully"
 fi
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 echo -e ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-dns 
@@ -59,31 +57,29 @@ menu-dns
 
 function resdns(){
     clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}                 • USERS LOGS •                ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• USERS LOGS •"
+_box_bot
+_box_top
 read -p "│   Reset Default DNS [Y/N]: " -e answer
 if [[ "$answer" = 'y' ]]; then
 dnsfile="/root/dns"
 if test -f "$dnsfile"; then
 rm /root/dns
 fi
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC}  ${INFO} Delete Resolv.conf DNS";
+_bline ""
+_bline "${INFO} Delete Resolv.conf DNS"
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 sleep 2
-echo -e "$COLOR1│${NC}  ${INFO} Delete Resolv.conf.d/head DNS";
+_bline "${INFO} Delete Resolv.conf.d/head DNS"
 echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/head
 sleep 2
 else
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC}   $INFO Operation Cancelled By User"
+_bline ""
+_bline "$INFO Operation Cancelled By User"
 fi
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 echo -e ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-dns 
@@ -92,36 +88,34 @@ menu-dns
 # Cek konten: DNS aktif, resolv.conf, konektivitas
 function contentcek(){
     clear
-    echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "$COLOR1│${NC} ${COLBG1}               • CONTENT CEK •                 ${NC} $COLOR1│$NC"
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-    echo -e "$COLOR1│${NC}"
-    echo -e "$COLOR1│${NC}  Domain    : ${GREEN}$(cat /etc/xray/domain 2>/dev/null || echo '-')${NC}"
-    echo -e "$COLOR1│${NC}  IP VPS    : ${GREEN}$(curl -s -m 8 https://ipinfo.io/ip 2>/dev/null || echo '-')${NC}"
+_box_top
+_bcenter "• CONTENT CEK •"
+_box_bot
+_bline ""
+_bline "Domain    : ${GREEN}$(cat /etc/xray/domain 2>/dev/null || echo '-')${NC}"
+_bline "IP VPS    : ${GREEN}$(curl -s -m 8 https://ipinfo.io/ip 2>/dev/null || echo '-')${NC}"
     if [ -f /root/dns ]; then
-        echo -e "$COLOR1│${NC}  DNS aktif : ${GREEN}$(cat /root/dns 2>/dev/null)${NC}"
+_bline "DNS aktif : ${GREEN}$(cat /root/dns 2>/dev/null)${NC}"
     else
-        echo -e "$COLOR1│${NC}  DNS aktif : ${GREEN}(default sistem)${NC}"
+_bline "DNS aktif : ${GREEN}(default sistem)${NC}"
     fi
-    echo -e "$COLOR1│${NC}"
-    echo -e "$COLOR1│${NC}  ${INFO} nameserver di /etc/resolv.conf:"
+_bline ""
+_bline "${INFO} nameserver di /etc/resolv.conf:"
     while IFS= read -r line; do
-        echo -e "$COLOR1│${NC}    $line"
+_bline "$line"
     done < <(grep -E "^nameserver" /etc/resolv.conf 2>/dev/null || echo "(kosong)")
-    echo -e "$COLOR1│${NC}"
-    echo -e "$COLOR1│${NC}  ${INFO} Uji resolve:"
+_bline ""
+_bline "${INFO} Uji resolve:"
     for d in google.com cloudflare.com; do
         if getent hosts "$d" >/dev/null 2>&1; then
-            echo -e "$COLOR1│${NC}    ${GREEN}OK${NC}  $d"
+_bline "${GREEN}OK${NC}  $d"
         else
-            echo -e "$COLOR1│${NC}    ${RED}GAGAL${NC}  $d"
+_bline "${RED}GAGAL${NC}  $d"
         fi
     done
-    echo -e "$COLOR1│${NC}"
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-    echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-    echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+_bline ""
+_box_bot
+_byline
     echo -e ""
     read -n 1 -s -r -p "   Press any key to back on menu"
     menu-dns
@@ -130,46 +124,44 @@ function contentcek(){
 # Reboot VPS dengan konfirmasi
 function doreboot(){
     clear
-    echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "$COLOR1│${NC} ${COLBG1}                  • REBOOT •                   ${NC} $COLOR1│$NC"
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-    echo -e "$COLOR1│${NC}"
-    echo -e "$COLOR1│${NC}   ${YELLOW}VPS akan reboot sekarang.${NC}"
-    echo -e "$COLOR1│${NC}   Semua koneksi aktif akan terputus."
-    echo -e "$COLOR1│${NC}"
+_box_top
+_bcenter "• REBOOT •"
+_box_bot
+_bline ""
+_bline "${YELLOW}VPS akan reboot sekarang.${NC}"
+_bline "Semua koneksi aktif akan terputus."
+_bline ""
     read -p "│   Lanjutkan reboot? [Y/N]: " -e answer
     if [[ "$answer" = 'y' || "$answer" = 'Y' ]]; then
-        echo -e "$COLOR1│${NC}   ${INFO} Rebooting..."
+_bline "${INFO} Rebooting..."
         sleep 2
         reboot
     else
-        echo -e "$COLOR1│${NC}   ${INFO} Dibatalkan."
+_bline "${INFO} Dibatalkan."
         sleep 2
         menu-dns
     fi
 }
 
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}                 • USERS LOGS •                ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• USERS LOGS •"
+_box_bot
+_box_top
 
 dnsfile="/root/dns"
 if test -f "$dnsfile"; then
 udns=$(cat /root/dns)
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC}   Active DNS : $udns"
-echo -e "$COLOR1│${NC}"
+_bline ""
+_bline "Active DNS : $udns"
+_bline ""
 fi
-echo -e "$COLOR1│${NC}  $COLOR1 [01]$NC • CHANGE DNS       $COLOR1 [03]$NC • CONTENT CEK" 
-echo -e "$COLOR1│${NC}  $COLOR1 [02]$NC • RESET DNS        $COLOR1 [04]$NC • REBOOT"
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC}  $COLOR1 [00]$NC • GO BACK"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bmenu2 "01" "CHANGE DNS" "03" "CONTENT CEK"
+_bmenu2 "02" "RESET DNS" "04" "REBOOT"
+_bline ""
+_bmenu1 "00" "GO BACK"
+_box_bot
+_byline
 echo -e ""
 read -p " Select menu :  "  opt
 echo -e   ""

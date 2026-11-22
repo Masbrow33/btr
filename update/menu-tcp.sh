@@ -1,12 +1,13 @@
 #!/bin/bash
+[ -f /usr/local/lib/vpsbox.sh ] && . /usr/local/lib/vpsbox.sh && vpsbox_init
 dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
 ###########- COLOR CODE -##############
 colornow=$(cat /etc/yokkovpn/theme/color.conf)
 NC="\e[0m"
 RED="\033[0;31m" 
-COLOR1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "TEXT" | cut -d: -f2|sed 's/ //g')"
-COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | cut -d: -f2|sed 's/ //g')"                    
+COLOR1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "TEXT" | head -1 | cut -d: -f2|sed 's/ //g')"
+COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | head -1 | cut -d: -f2|sed 's/ //g')"                    
 ###########- END COLOR CODE -##########
 
 
@@ -14,24 +15,25 @@ COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | cut -d: -f2|sed 's/
 red='\e[1;31m'
 green='\e[0;32m'
 NC='\e[0m'
+vpsbox_init
 
 MYIP=$(curl -s https://icanhazip.com)
 
 clear
 tcp_status() {
   if [[ $(grep -c "^#PH56" /etc/sysctl.conf) -eq 1 ]]; then
-    echo -e "$COLOR1│${NC}   TCP 1 Current status : ${green}Installed${NC}"
+_bline "TCP 1 Current status : ${green}Installed${NC}"
   else
-    echo -e "$COLOR1│${NC}   TCP 1 Current status : ${red}Not Installed${NC}"
+_bline "TCP 1 Current status : ${red}Not Installed${NC}"
   fi
 }
 
 # status tweak
 tcp_2_status() {
   if [[ $(grep -c "^##VpsPack" /etc/sysctl.conf) -eq 1 ]]; then
-    echo -e "$COLOR1│${NC}   TCP 2 Current status : ${green}Installed${NC}"
+_bline "TCP 2 Current status : ${green}Installed${NC}"
   else
-    echo -e "$COLOR1│${NC}   TCP 2 Current status : ${red}Not Installed${NC}"
+_bline "TCP 2 Current status : ${red}Not Installed${NC}"
   fi
 }
 
@@ -39,18 +41,18 @@ tcp_2_status() {
 bbr_status() {
   local param=$(sysctl net.ipv4.tcp_congestion_control | awk '{print $3}')
   if [[ x"${param}" == x"bbr" ]]; then
-    echo -e "$COLOR1│${NC}   BBR status : ${green}Installed${NC}"
+_bline "BBR status : ${green}Installed${NC}"
   else
-    echo -e "$COLOR1│${NC}   BBR status : ${red}Not Installed${NC}"
+_bline "BBR status : ${red}Not Installed${NC}"
   fi
 }
 
 delete_bbr() {
   clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
 echo -e "$COLOR1│ $NC$COLBG1              • TCP TWEAK PANEL •              $COLOR1 │$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_bot
+_box_top
   read -p "   [INFO] Do you want to remove BBR? [y/n]: " -e answer0
   if [[ "$answer0" = 'y' ]]; then
     grep -v "^#BBR
@@ -58,11 +60,9 @@ net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr" /etc/sysctl.conf >/tmp/syscl && mv /tmp/syscl /etc/sysctl.conf
 sysctl -p /etc/sysctl.conf >/dev/null
 echo "cubic" >/proc/sys/net/ipv4/tcp_congestion_control
-echo -e "$COLOR1│$NC   [INFO] BBR settings successfully removed."
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[INFO] BBR settings successfully removed."
+_box_bot
+_byline
     echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
     menu-tcp
@@ -107,35 +107,29 @@ check_kernel_version() {
 install_bbr2() {
   check_bbr_status
   if [ $? -eq 0 ]; then
-echo -e "$COLOR1│$NC   [INFO]  TCP BBR already  installed."
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[INFO]  TCP BBR already  installed."
+_box_bot
+_byline
     echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
     menu-tcp
   fi
   check_kernel_version
   if [ $? -eq 0 ]; then
-echo -e "$COLOR1│$NC  [INFO]  Your kernel version is greater than 4.9, directly setting TCP BBR..."
+_bline "[INFO]  Your kernel version is greater than 4.9, directly setting TCP BBR..."
     sysctl_config
-echo -e "$COLOR1│$NC   [INFO]  Setting TCP BBR completed..."
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[INFO]  Setting TCP BBR completed..."
+_box_bot
+_byline
     echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
     menu-tcp
   fi
 
   if [[ x"${release}" == x"centos" ]]; then
-echo -e "$COLOR1│$NC   [ERROR] Centos not support"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[ERROR] Centos not support"
+_box_bot
+_byline
     echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
     menu-tcp
@@ -144,18 +138,16 @@ read -n 1 -s -r -p "   Press any key to back on menu"
 
 install_bbr() {
   clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
 echo -e "$COLOR1│ $NC$COLBG1              • TCP TWEAK PANEL •              $COLOR1 │$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_bot
+_box_top
   read -p "   [INFO] Proceed with installation? [y/n]: " -e answer
   if [[ "$answer" = 'y' ]]; then
     install_bbr2
   else
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
     echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
     menu-tcp
@@ -164,10 +156,10 @@ read -n 1 -s -r -p "   Press any key to back on menu"
 
 delete_Tweaker() {
   clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
 echo -e "$COLOR1│ $NC$COLBG1              • TCP TWEAK PANEL •              $COLOR1 │$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_bot
+_box_top
   read -p "   [INFO] Remove TCP Tweaker settings? [y/n]: " -e answer0
   if [[ "$answer0" = 'y' ]]; then
     grep -v "^#PH56
@@ -179,11 +171,9 @@ net.ipv4.tcp_wmem = 4096 16384 16777216
 net.ipv4.tcp_low_latency = 1
 net.ipv4.tcp_slow_start_after_idle = 0" /etc/sysctl.conf >/tmp/syscl && mv /tmp/syscl /etc/sysctl.conf
     sysctl -p /etc/sysctl.conf >/dev/null
-echo -e "$COLOR1│$NC   [INFO] TCP Tweaker settings successfully removed."
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[INFO] TCP Tweaker settings successfully removed."
+_box_bot
+_byline
     echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
     menu-tcp
@@ -195,10 +185,10 @@ read -n 1 -s -r -p "   Press any key to back on menu"
 
 install_Tweaker() {
   clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
 echo -e "$COLOR1│ $NC$COLBG1              • TCP TWEAK PANEL •              $COLOR1 │$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_bot
+_box_top
   read -p "   [INFO] Proceed with installation? [y/n]: " -e answer
   if [[ "$answer" = 'y' ]]; then
     echo " " >>/etc/sysctl.conf
@@ -211,25 +201,23 @@ net.ipv4.tcp_wmem = 4096 16384 16777216
 net.ipv4.tcp_low_latency = 1
 net.ipv4.tcp_slow_start_after_idle = 0" >>/etc/sysctl.conf
     sysctl -p /etc/sysctl.conf >/dev/null
-echo -e "$COLOR1│$NC  [INFO] TCP Tweaker settings added successfully."
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[INFO] TCP Tweaker settings added successfully."
+_box_bot
+_byline
     echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
     menu-tcp
   else
-echo -e "$COLOR1│$NC Installation was canceled by the user!"
+_bline "Installation was canceled by the user!"
   fi
 }
 
 delete_Tweaker_2() {
   clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
 echo -e "$COLOR1│ $NC$COLBG1              • TCP TWEAK PANEL •              $COLOR1 │$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_bot
+_box_top
   read -p "   [INFO] Remove TCP Tweaker settings? [y/n]: " -e answer0
   if [[ "$answer0" = 'y' ]]; then
     grep -v "^##VpsPack
@@ -247,11 +235,9 @@ net.ipv4.tcp_max_orphans = 16384
 net.core.somaxconn = 16384
 net.core.netdev_max_backlog = 16384" /etc/sysctl.conf >/tmp/syscl && mv /tmp/syscl /etc/sysctl.conf
     sysctl -p /etc/sysctl.conf >/dev/null
-echo -e "$COLOR1│$NC  TCP Tweaker settings successfully removed."
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "TCP Tweaker settings successfully removed."
+_box_bot
+_byline
     echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
     menu-tcp
@@ -263,10 +249,10 @@ read -n 1 -s -r -p "   Press any key to back on menu"
 
 install_Tweaker_2() {
   clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
 echo -e "$COLOR1│ $NC$COLBG1              • TCP TWEAK PANEL •              $COLOR1 │$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_bot
+_box_top
   read -p "   [INFO] Proceed with installation? [y/n]: " -e answer
   if [[ "$answer" = 'y' ]]; then
     echo " " >>/etc/sysctl.conf
@@ -285,39 +271,35 @@ net.ipv4.tcp_max_orphans = 16384
 net.core.somaxconn = 16384
 net.core.netdev_max_backlog = 16384" >>/etc/sysctl.conf
     sysctl -p /etc/sysctl.conf >/dev/null
-echo -e "$COLOR1│$NC   [INFO] TCP Tweaker settings added successfully."
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[INFO] TCP Tweaker settings added successfully."
+_box_bot
+_byline
     echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
     menu-tcp
   else
     
-echo -e "$COLOR1│$NC   Installation was canceled by the user!"
+_bline "Installation was canceled by the user!"
     
   fi
 }
 
 # menu tweaker
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
 echo -e "$COLOR1│ $NC$COLBG1              • TCP TWEAK PANEL •              $COLOR1 │$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_bot
+_box_top
 tcp_status
 tcp_2_status
 bbr_status
-echo -e "$COLOR1│${NC}  "
-echo -e "$COLOR1│${NC}  ${COLOR1}[01]${NC} • Install BBR      ${COLOR1}[04]${NC} • Delete BBR "
-echo -e "$COLOR1│${NC}  ${COLOR1}[02]${NC} • Install TCP 1    ${COLOR1}[05]${NC} • Delete TCP 1"
-echo -e "$COLOR1│${NC}  ${COLOR1}[03]${NC} • Install TCP 2    ${COLOR1}[06]${NC} • Delete TCP 2"
-echo -e "$COLOR1│${NC}  "
-echo -e "$COLOR1│${NC}  ${COLOR1}[00]${NC} • GO BACK          ${COLOR1}[07]${NC} • REBOOT"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline ""
+_bmenu2 "01" "Install BBR" "04" "Delete BBR"
+_bmenu2 "02" "Install TCP 1" "05" "Delete TCP 1"
+_bmenu2 "03" "Install TCP 2" "06" "Delete TCP 2"
+_bline ""
+_bmenu2 "00" "GO BACK" "07" "REBOOT"
+_box_bot
+_byline
 echo -e ""
 read -p " Select menu :  " opt
 echo -e "$DF"

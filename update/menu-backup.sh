@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f /usr/local/lib/vpsbox.sh ] && . /usr/local/lib/vpsbox.sh && vpsbox_init
 dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
 ###########- COLOR CODE -##############
@@ -7,8 +8,9 @@ NC="\e[0m"
 RED="\033[0;31m"
 GREEN="\033[0;32m"
 YELLOW="\033[0;33m"
-COLOR1="$(cat /etc/yokkovpn/theme/$colornow 2>/dev/null | grep -w "TEXT" | cut -d: -f2|sed 's/ //g')"
-COLBG1="$(cat /etc/yokkovpn/theme/$colornow 2>/dev/null | grep -w "BG" | cut -d: -f2|sed 's/ //g')"
+COLOR1="$(cat /etc/yokkovpn/theme/$colornow 2>/dev/null | grep -w "TEXT" | head -1 | cut -d: -f2|sed 's/ //g')"
+COLBG1="$(cat /etc/yokkovpn/theme/$colornow 2>/dev/null | grep -w "BG" | head -1 | cut -d: -f2|sed 's/ //g')"
+vpsbox_init
 ###########- END COLOR CODE -##########
 INFO="${GREEN}[INFO]${NC}"
 
@@ -19,23 +21,23 @@ API_FILES="/root/multi/bot.conf /root/ResBotAuth /etc/xray/domain"
 # ---------- BACKUP VPS ----------
 function backup(){
     clear
-    echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "$COLOR1│${NC} ${COLBG1}                • BACKUP VPS •                 ${NC} $COLOR1│$NC"
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-    echo -e "$COLOR1│${NC}  ${INFO} Mengunduh skrip backup..."
+_box_top
+_bcenter "• BACKUP VPS •"
+_box_bot
+_bline "${INFO} Mengunduh skrip backup..."
     cd /root
     wget -q -O backup.sh "$REPO/backup.sh"
     if [ ! -s backup.sh ]; then
-        echo -e "$COLOR1│${NC}  ${RED}[ERROR]${NC} Gagal mengunduh backup.sh"
-        echo -e "$COLOR1│${NC}  ${INFO} Cek koneksi atau URL repo."
+_bline "${RED}[ERROR]${NC} Gagal mengunduh backup.sh"
+_bline "${INFO} Cek koneksi atau URL repo."
     else
         chmod +x backup.sh
-        echo -e "$COLOR1│${NC}  ${INFO} Menjalankan backup..."
-        echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+_bline "${INFO} Menjalankan backup..."
+_box_bot
         ./backup.sh
         rm -f backup.sh
     fi
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+_box_bot
     echo -e ""
     read -n 1 -s -r -p "   Press any key to back on menu"
     menu-backup
@@ -44,23 +46,23 @@ function backup(){
 # ---------- RESTORE VPS ----------
 function restore(){
     clear
-    echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "$COLOR1│${NC} ${COLBG1}               • RESTORE VPS •                 ${NC} $COLOR1│$NC"
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-    echo -e "$COLOR1│${NC}  ${INFO} Mengunduh skrip restore..."
+_box_top
+_bcenter "• RESTORE VPS •"
+_box_bot
+_bline "${INFO} Mengunduh skrip restore..."
     cd /root
     wget -q -O restore.sh "$REPO/restore.sh"
     if [ ! -s restore.sh ]; then
-        echo -e "$COLOR1│${NC}  ${RED}[ERROR]${NC} Gagal mengunduh restore.sh"
-        echo -e "$COLOR1│${NC}  ${INFO} Cek koneksi atau URL repo."
+_bline "${RED}[ERROR]${NC} Gagal mengunduh restore.sh"
+_bline "${INFO} Cek koneksi atau URL repo."
     else
         chmod +x restore.sh
-        echo -e "$COLOR1│${NC}  ${INFO} Menjalankan restore..."
-        echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+_bline "${INFO} Menjalankan restore..."
+_box_bot
         ./restore.sh
         rm -f restore.sh
     fi
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+_box_bot
     echo -e ""
     read -n 1 -s -r -p "   Press any key to back on menu"
     menu-backup
@@ -71,30 +73,30 @@ function backupapi(){
     clear
     mkdir -p "$BKPDIR"
     local out="$BKPDIR/api-$(date +%Y%m%d-%H%M%S).tar.gz"
-    echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "$COLOR1│${NC} ${COLBG1}                • BACKUP API •                 ${NC} $COLOR1│$NC"
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+_box_top
+_bcenter "• BACKUP API •"
+_box_bot
     local found=""
     for f in $API_FILES; do
         [ -e "$f" ] && found="$found $f"
     done
     if [ -z "$found" ]; then
-        echo -e "$COLOR1│${NC}  ${RED}[ERROR]${NC} Tidak ada file konfigurasi API ditemukan"
+_bline "${RED}[ERROR]${NC} Tidak ada file konfigurasi API ditemukan"
     else
         # shellcheck disable=SC2086
         tar -czf "$out" $found 2>/dev/null
         if [ -s "$out" ]; then
-            echo -e "$COLOR1│${NC}  ${INFO} Tersimpan: ${GREEN}$out${NC}"
-            echo -e "$COLOR1│${NC}  ${INFO} Ukuran   : $(du -h "$out" | cut -f1)"
-            echo -e "$COLOR1│${NC}  ${INFO} Isi      :"
+_bline "${INFO} Tersimpan: ${GREEN}$out${NC}"
+_bline "${INFO} Ukuran   : $(du -h "$out" | cut -f1)"
+_bline "${INFO} Isi      :"
             while IFS= read -r line; do
-                echo -e "$COLOR1│${NC}     $line"
+_bline "$line"
             done < <(tar -tzf "$out" 2>/dev/null)
         else
-            echo -e "$COLOR1│${NC}  ${RED}[ERROR]${NC} Gagal membuat arsip"
+_bline "${RED}[ERROR]${NC} Gagal membuat arsip"
         fi
     fi
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+_box_bot
     echo -e ""
     read -n 1 -s -r -p "   Press any key to back on menu"
     menu-backup
@@ -103,17 +105,17 @@ function backupapi(){
 # ---------- RESET API ----------
 function resetapi(){
     clear
-    echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-    echo -e "$COLOR1│${NC} ${COLBG1}                 • RESET API •                 ${NC} $COLOR1│$NC"
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-    echo -e "$COLOR1│${NC}   ${YELLOW}Ini akan menghapus konfigurasi API/bot:${NC}"
+_box_top
+_bcenter "• RESET API •"
+_box_bot
+_bline "${YELLOW}Ini akan menghapus konfigurasi API/bot:${NC}"
     for f in $API_FILES; do
-        [ -e "$f" ] && echo -e "$COLOR1│${NC}     - $f"
+        [ -e "$f" ] && _bline "    - $f"
     done
-    echo -e "$COLOR1│${NC}"
-    echo -e "$COLOR1│${NC}   ${YELLOW}Semua akun VPN di config.json akan dihapus.${NC}"
-    echo -e "$COLOR1│${NC}   Cadangan otomatis dibuat lebih dulu."
-    echo -e "$COLOR1│${NC}"
+_bline ""
+_bline "${YELLOW}Semua akun VPN di config.json akan dihapus.${NC}"
+_bline "Cadangan otomatis dibuat lebih dulu."
+_bline ""
     read -p "│   Lanjutkan? [Y/N]: " -e answer
     if [[ "$answer" = 'y' || "$answer" = 'Y' ]]; then
         mkdir -p "$BKPDIR"
@@ -123,10 +125,10 @@ function resetapi(){
             [ -e "$f" ] && found="$found $f"
         done
         [ -n "$found" ] && tar -czf "$out" $found 2>/dev/null
-        echo -e "$COLOR1│${NC}  ${INFO} Cadangan: $out"
+_bline "${INFO} Cadangan: $out"
 
         for f in /root/multi/bot.conf /root/ResBotAuth; do
-            [ -e "$f" ] && rm -f "$f" && echo -e "$COLOR1│${NC}  ${INFO} Dihapus: $f"
+            [ -e "$f" ] && rm -f "$f" && _bline " ${INFO} Dihapus: $f"
         done
 
         if [ -f /etc/xray/config.json ]; then
@@ -147,30 +149,28 @@ except Exception as e:
     print(f"  gagal: {e}")
 PYEOF
             systemctl restart xray >/dev/null 2>&1
-            echo -e "$COLOR1│${NC}  ${INFO} Xray direstart"
+_bline "${INFO} Xray direstart"
         fi
-        echo -e "$COLOR1│${NC}  ${GREEN}Reset selesai.${NC}"
+_bline "${GREEN}Reset selesai.${NC}"
     else
-        echo -e "$COLOR1│${NC}  ${INFO} Dibatalkan."
+_bline "${INFO} Dibatalkan."
     fi
-    echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+_box_bot
     echo -e ""
     read -n 1 -s -r -p "   Press any key to back on menu"
     menu-backup
 }
 
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • BACKUP PANEL MENU •             ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e " $COLOR1┌───────────────────────────────────────────────┐${NC}"
-echo -e " $COLOR1│$NC   ${COLOR1}[01]${NC} • BACKUP VPS      ${COLOR1}[03]${NC} • BACKUP API    $COLOR1│$NC"
-echo -e " $COLOR1│$NC   ${COLOR1}[02]${NC} • RESTORE VPS     ${COLOR1}[04]${NC} • RESET API     $COLOR1│$NC"
-echo -e " $COLOR1│$NC                                               $COLOR1│$NC"
-echo -e " $COLOR1│$NC   ${COLOR1}[00]${NC} • GO BACK${NC}                              $COLOR1│$NC"
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+_box_top
+_bcenter "• BACKUP PANEL MENU •"
+_box_bot
+_box_top
+_bmenu2 "01" "BACKUP VPS" "03" "BACKUP API"
+_bmenu2 "02" "RESTORE VPS" "04" "RESET API"
+_bline ""
+_bmenu1 "00" "GO BACK"
+_byline
 echo -e ""
 read -p " Select menu :  "  opt
 echo -e ""

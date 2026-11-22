@@ -1,12 +1,14 @@
 #!/bin/bash
+[ -f /usr/local/lib/vpsbox.sh ] && . /usr/local/lib/vpsbox.sh && vpsbox_init
 dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
 ###########- COLOR CODE -##############
 colornow=$(cat /etc/yokkovpn/theme/color.conf)
 NC="\e[0m"
 RED="\033[0;31m" 
-COLOR1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "TEXT" | cut -d: -f2|sed 's/ //g')"
-COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | cut -d: -f2|sed 's/ //g')"                    
+COLOR1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "TEXT" | head -1 | cut -d: -f2|sed 's/ //g')"
+COLBG1="$(cat /etc/yokkovpn/theme/$colornow | grep -w "BG" | head -1 | cut -d: -f2|sed 's/ //g')"                    
+vpsbox_init
 ###########- END COLOR CODE -##########
 
 
@@ -14,10 +16,10 @@ function cekvless(){
 clear
 echo -n > /tmp/other.txt
 data=( `cat /etc/xray/config.json | grep '#&' | cut -d ' ' -f 2 | sort | uniq`);
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • RENEW VLESS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• RENEW VLESS USER •"
+_box_bot
+_box_top
 
 for akun in "${data[@]}"
 do
@@ -45,17 +47,15 @@ if [[ -z "$jum" ]]; then
 echo > /dev/null
 else
 jum2=$(cat /tmp/ipvless.txt | nl)
-echo -e "$COLOR1│${NC}   user : $akun";
-echo -e "$COLOR1│${NC}   $jum2";
+_bline "user : $akun"
+_bline "$jum2"
 fi
 rm -rf /tmp/ipvless.txt
 done
 
 rm -rf /tmp/other.txt
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-vless
@@ -63,33 +63,29 @@ menu-vless
 
 function renewvless(){
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • RENEW VLESS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• RENEW VLESS USER •"
+_box_bot
+_box_top
 NUMBER_OF_CLIENTS=$(grep -c -E "^#& " "/etc/xray/config.json")
 if [[ ${NUMBER_OF_CLIENTS} == '0' ]]; then
-echo -e "$COLOR1│${NC}  • You have no existing clients!"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "• You have no existing clients!"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-vless
 fi
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • RENEW VLESS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• RENEW VLESS USER •"
+_box_bot
+_box_top
 grep -E "^#& " "/etc/xray/config.json" | cut -d ' ' -f 2-3 | column -t | sort | uniq | nl
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC}  • [NOTE] Press any key to back on menu"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline ""
+_bline "• [NOTE] Press any key to back on menu"
+_box_bot
+_byline
 echo -e "$COLOR1───────────────────────────────────────────────────${NC}"
 read -rp "   Input Username : " user
 if [ -z $user ]; then
@@ -109,19 +105,17 @@ exp4=`date -d "$exp3 days" +"%Y-%m-%d"`
 sed -i "/#& $user/c\#& $user $exp4" /etc/xray/config.json
 systemctl restart xray > /dev/null 2>&1
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • RENEW VLESS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}   [INFO]  $user Account Renewed Successfully"
-echo -e "$COLOR1│${NC}   "
-echo -e "$COLOR1│${NC}   Client Name : $user"
-echo -e "$COLOR1│${NC}   Days Added  : $masaaktif Days"
-echo -e "$COLOR1│${NC}   Expired On  : $exp4"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• RENEW VLESS USER •"
+_box_bot
+_box_top
+_bline "[INFO]  $user Account Renewed Successfully"
+_bline ""
+_bline "Client Name : $user"
+_bline "Days Added  : $masaaktif Days"
+_bline "Expired On  : $exp4"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-vless
@@ -132,28 +126,26 @@ function delvless(){
     clear
 NUMBER_OF_CLIENTS=$(grep -c -E "^#& " "/etc/xray/config.json")
 if [[ ${NUMBER_OF_CLIENTS} == '0' ]]; then
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}            • DELETE VLESS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}  • You Dont have any existing clients!"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• DELETE VLESS USER •"
+_box_bot
+_box_top
+_bline "• You Dont have any existing clients!"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-vless
 fi
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}            • DELETE VLESS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• DELETE VLESS USER •"
+_box_bot
+_box_top
 grep -E "^#& " "/etc/xray/config.json" | cut -d ' ' -f 2-3 | column -t | sort | uniq | nl
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC}  • [NOTE] Press any key to back on menu"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
+_bline ""
+_bline "• [NOTE] Press any key to back on menu"
+_box_bot
 echo -e "$COLOR1───────────────────────────────────────────────────${NC}"
 read -rp "   Input Username : " user
 if [ -z $user ]; then
@@ -163,18 +155,16 @@ exp=$(grep -wE "^#& $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | un
 sed -i "/^#& $user $exp/,/^},{/d" /etc/xray/config.json
 systemctl restart xray > /dev/null 2>&1
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}            • DELETE VLESS USE •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}   • Accound Delete Successfully"
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC}   • Client Name : $user"
-echo -e "$COLOR1│${NC}   • Expired On  : $exp"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• DELETE VLESS USE •"
+_box_bot
+_box_top
+_bline "• Accound Delete Successfully"
+_bline ""
+_bline "• Client Name : $user"
+_bline "• Expired On  : $exp"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-vless
@@ -183,20 +173,18 @@ fi
 
 function addvless(){
 domain=$(cat /etc/xray/domain)
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}            • CREATE VLESS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
+_box_top
+_bcenter "• CREATE VLESS USER •"
+_box_bot
+_box_top
 tls="$(cat ~/log-install.txt | grep -w "Vless TLS" | cut -d: -f2|sed 's/ //g')"
 none="$(cat ~/log-install.txt | grep -w "Vless None TLS" | cut -d: -f2|sed 's/ //g')"
 until [[ $user =~ ^[a-zA-Z0-9_]+$ && ${CLIENT_EXISTS} == '0' ]]; do
 		read -rp "  Input Username : " -e user
         if [ -z $user ]; then
-echo -e "$COLOR1│${NC} [Error] Username cannot be empty "
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "[Error] Username cannot be empty"
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu
@@ -204,11 +192,9 @@ fi
 		CLIENT_EXISTS=$(grep -w $user /etc/xray/config.json | wc -l)
 
 if [[ ${CLIENT_EXISTS} == '1' ]]; then
-echo -e "$COLOR1│${NC} Please choose another name."
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_bline "Please choose another name."
+_box_bot
+_byline
 echo ""
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu
@@ -227,35 +213,33 @@ vlesslink2="vless://${uuid}@${domain}:$none?path=%2Fvless&encryption=none&type=w
 vlesslink3="vless://${uuid}@${domain}:$tls?mode=gun&security=tls&encryption=none&type=grpc&serviceName=vless-grpc&sni=${domain}#${user}"
 systemctl restart xray
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}            • CREATE VLESS USER •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} Remarks       : ${user}" 
-echo -e "$COLOR1│${NC} Expired On    : $exp" 
-echo -e "$COLOR1│${NC} Domain        : ${domain}" 
-echo -e "$COLOR1│${NC} port TLS      : $tls" 
-echo -e "$COLOR1│${NC} port none TLS : $none" 
-echo -e "$COLOR1│${NC} id            : ${uuid}"
-echo -e "$COLOR1│${NC} Encryption    : none" 
-echo -e "$COLOR1│${NC} Network       : ws" 
-echo -e "$COLOR1│${NC} Path          : /vless" 
-echo -e "$COLOR1│${NC} Path WSS      : wss://${domain}/vless" 
-echo -e "$COLOR1│${NC} Path          : vless-grpc" 
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} Link TLS :"
-echo -e "$COLOR1│${NC} ${vlesslink1}" 
-echo -e "$COLOR1│${NC}"   
-echo -e "$COLOR1│${NC} Link none TLS : "
-echo -e "$COLOR1│${NC} ${vlesslink2}" 
-echo -e "$COLOR1│${NC}"
-echo -e "$COLOR1│${NC} Link GRPC : "
-echo -e "$COLOR1│${NC} ${vlesslink3}" 
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• CREATE VLESS USER •"
+_box_bot
+_box_top
+_bline "Remarks       : ${user}"
+_bline "Expired On    : $exp"
+_bline "Domain        : ${domain}"
+_bline "port TLS      : $tls"
+_bline "port none TLS : $none"
+_bline "id            : ${uuid}"
+_bline "Encryption    : none"
+_bline "Network       : ws"
+_bline "Path          : /vless"
+_bline "Path WSS      : wss://${domain}/vless"
+_bline "Path          : vless-grpc"
+_box_bot
+_box_top
+_bline "Link TLS :"
+_bline "${vlesslink1}"
+_bline ""
+_bline "Link none TLS :"
+_bline "${vlesslink2}"
+_bline ""
+_bline "Link GRPC :"
+_bline "${vlesslink3}"
+_box_bot
+_byline
 echo "" 
 read -n 1 -s -r -p "   Press any key to back on menu"
 menu-vless
@@ -263,18 +247,16 @@ menu-vless
 
 
 clear
-echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"
-echo -e "$COLOR1│${NC} ${COLBG1}             • VLESS PANEL MENU •              ${NC} $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}"
-echo -e " $COLOR1┌───────────────────────────────────────────────┐${NC}"
-echo -e " $COLOR1│$NC   ${COLOR1}[01]${NC} • ADD VLESS      ${COLOR1}[03]${NC} • DELETE VLESS${NC}   $COLOR1│$NC"
-echo -e " $COLOR1│$NC   ${COLOR1}[02]${NC} • RENEW VLESS${NC}    ${COLOR1}[04]${NC} • USER ONLINE    $COLOR1│$NC"
-echo -e " $COLOR1│$NC                                              ${NC} $COLOR1│$NC"
-echo -e " $COLOR1│$NC   ${COLOR1}[00]${NC} • GO BACK${NC}                              $COLOR1│$NC"
-echo -e " $COLOR1└───────────────────────────────────────────────┘${NC}"
-echo -e "$COLOR1┌────────────────────── BY ───────────────────────┐${NC}"
-echo -e "$COLOR1│${NC}           ${GREEN}  • EKO BELLICK PREMIUM •   $NC          $COLOR1│$NC"
-echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
+_box_top
+_bcenter "• VLESS PANEL MENU •"
+_box_bot
+_box_top
+_bmenu2 "01" "ADD VLESS" "03" "DELETE VLESS"
+_bmenu2 "02" "RENEW VLESS" "04" "USER ONLINE"
+_bline ""
+_bmenu1 "00" "GO BACK"
+_box_bot
+_byline
 echo -e ""
 read -p " Select menu :  "  opt
 echo -e ""

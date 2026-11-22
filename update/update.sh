@@ -4,6 +4,13 @@ biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
 ###########- COLOR CODE -##############
 echo -e " [INFO] Downloading Update File"
 sleep 2
+
+# WAJIB paling awal: library penggambar kotak. Semua menu memanggil
+# _box_top / _bline / _bmenu2 dari file ini. Kalau library tidak ada,
+# menu akan error "command not found" dan kotak tidak tergambar.
+mkdir -p /usr/local/lib
+wget -q -O /usr/local/lib/vpsbox.sh "https://raw.githubusercontent.com/Masbrow33/btr/main/lib/vpsbox.sh" && chmod 644 /usr/local/lib/vpsbox.sh
+
 wget -q -O /usr/bin/menu "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu.sh" && chmod +x /usr/bin/menu
 wget -q -O /usr/bin/menu-ss "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-ss.sh" && chmod +x /usr/bin/menu-ss
 wget -q -O /usr/bin/menu-vmess "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-vmess.sh" && chmod +x /usr/bin/menu-vmess
