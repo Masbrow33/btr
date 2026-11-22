@@ -241,7 +241,7 @@ asu=`cat<<EOF
       "net": "ws",
       "path": "/vmess",
       "type": "none",
-      "host": "",
+      "host": "$domain",
       "tls": "tls"
 }
 EOF`
@@ -256,7 +256,7 @@ ask=`cat<<EOF
       "net": "ws",
       "path": "/vmess",
       "type": "none",
-      "host": "",
+      "host": "$domain",
       "tls": "none"
 }
 EOF`
@@ -271,7 +271,7 @@ grpc=`cat<<EOF
       "net": "grpc",
       "path": "vmess-grpc",
       "type": "none",
-      "host": "",
+      "host": "$domain",
       "tls": "tls"
 }
 EOF`
@@ -299,7 +299,7 @@ echo -e "$COLOR1│${NC} alterId       : 0"
 echo -e "$COLOR1│${NC} Security      : auto" 
 echo -e "$COLOR1│${NC} Network       : ws" 
 echo -e "$COLOR1│${NC} Path          : /vmess" 
-echo -e "$COLOR1│${NC} Path WSS      : wss://who.int/vmess" 
+echo -e "$COLOR1│${NC} Path WSS      : wss://${domain}/vmess" 
 echo -e "$COLOR1│${NC} ServiceName   : vmess-grpc" 
 echo -e "$COLOR1└─────────────────────────────────────────────────┘${NC}" 
 echo -e "$COLOR1┌─────────────────────────────────────────────────┐${NC}"

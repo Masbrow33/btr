@@ -179,8 +179,16 @@ echo "=== Install Dropbear ==="
 # install dropbear
 #apt -y install dropbear
 sed -i 's/NO_START=1/NO_START=0/g' /etc/default/dropbear
-sed -i 's/DROPBEAR_PORT=22/DROPBEAR_PORT=143/g' /etc/default/dropbear
-sed -i 's/DROPBEAR_EXTRA_ARGS=/DROPBEAR_EXTRA_ARGS="-p 50000 -p 109 -p 110 -p 69"/g' /etc/default/dropbear
+# Ubuntu 24.04 mengomentari semua variabel di /etc/default/dropbear
+# (#DROPBEAR_PORT=143), jadi sed ke DROPBEAR_PORT=22 tidak pernah cocok.
+# Tulis ulang file secara eksplisit agar dropbear benar-benar mendengarkan.
+cat > /etc/default/dropbear <<'DBEOF'
+# Dropbear configuration
+NO_START=0
+DROPBEAR_PORT=143
+DROPBEAR_EXTRA_ARGS="-p 109 -p 50000 -p 110 -p 69"
+DROPBEAR_RECEIVE_WINDOW=65536
+DBEOF
 echo "/bin/false" >> /etc/shells
 echo "/usr/sbin/nologin" >> /etc/shells
 /etc/init.d/ssh restart
