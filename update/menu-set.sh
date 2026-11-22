@@ -62,23 +62,34 @@ else
 resdb="${red}OFFLINE${NC}"
 fi
  
-v2r=$(service $rekk status | grep active | cut -d ' ' $stat)
-if [ "$v2r" = "active" ]; then
-resv2r="${green}ONLINE${NC}"
+# Status per protokol: cek service xray hidup DAN inbound-nya ada di config.
+# Sebelumnya keempat baris (XRAY-SS/XRAY/VLESS/TROJAN) hanya membaca status
+# service yang sama, jadi satu protokol rusak tetap tampil ONLINE semua.
+proto_status() {
+    local proto="$1"
+    local svc
+    svc=$(systemctl is-active "$rekk" 2>/dev/null)
+    if [ "$svc" != "active" ]; then
+        echo "${red}OFFLINE${NC}"
+        return
+    fi
+    if [ -f /etc/xray/config.json ] && grep -q "\"protocol\": *\"$proto\"" /etc/xray/config.json 2>/dev/null; then
+        echo "${green}ONLINE${NC}"
+    else
+        echo "${red}OFFLINE${NC}"
+    fi
+}
+
+resv2r=$(proto_status "shadowsocks")
+resvles=$(proto_status "vless")
+restr=$(proto_status "trojan")
+resvmess=$(proto_status "vmess")
+
+# Status service xray itu sendiri (bukan per protokol)
+if [ "$(systemctl is-active "$rekk" 2>/dev/null)" = "active" ]; then
+    resxray="${green}ONLINE${NC}"
 else
-resv2r="${red}OFFLINE${NC}"
-fi
-vles=$(service $rekk status | grep active | cut -d ' ' $stat)
-if [ "$vles" = "active" ]; then
-resvles="${green}ONLINE${NC}"
-else
-resvles="${red}OFFLINE${NC}"
-fi
-trj=$(service $rekk status | grep active | cut -d ' ' $stat)
-if [ "$trj" = "active" ]; then
-restr="${green}ONLINE${NC}"
-else
-restr="${red}OFFLINE${NC}"
+    resxray="${red}OFFLINE${NC}"
 fi
 
 ningx=$(service nginx status | grep active | cut -d ' ' $stat)
@@ -106,7 +117,8 @@ echo -e " $COLOR1│${NC}  • WS DROPBEAR                      • $rews"
 echo -e " $COLOR1│${NC}  • WS STUNNEL                       • $rews2"
 echo -e " $COLOR1│${NC}  • STUNNEL                          • $resst"
 echo -e " $COLOR1│${NC}  • XRAY-SS                          • $resv2r"
-echo -e " $COLOR1│${NC}  • XRAY                             • $resv2r"
+echo -e " $COLOR1│${NC}  • XRAY                             • $resxray"
+echo -e " $COLOR1│${NC}  • VMESS                            • $resvmess"
 echo -e " $COLOR1│${NC}  • VLESS                            • $resvles"
 echo -e " $COLOR1│${NC}  • TROJAN                           • $restr"
 echo -e " $COLOR1└───────────────────────────────────────────────┘${NC}" 
@@ -129,8 +141,12 @@ sleep 1
 systemctl restart ssh
 echo -e " $COLOR1│${NC}  [INFO] • Restarting SSH Services             $COLOR1│${NC}"
 sleep 1
-systemctl restart squid
-echo -e " $COLOR1│${NC}  [INFO] • Restarting Squid Services           $COLOR1│${NC}"
+if systemctl list-unit-files 2>/dev/null | grep -q "^squid.service"; then
+    systemctl restart squid >/dev/null 2>&1 || true
+    echo -e " $COLOR1│${NC}  [INFO] • Restarting Squid Services           $COLOR1│${NC}"
+else
+    echo -e " $COLOR1│${NC}  [SKIP] • Squid tidak terpasang               $COLOR1│${NC}"
+fi
 sleep 1
 systemctl restart openvpn
 systemctl restart nginx
