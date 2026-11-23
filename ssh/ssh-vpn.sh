@@ -127,41 +127,98 @@ install_ssl(){
 # install webserver
 apt -y install nginx
 cd
-rm /etc/nginx/sites-enabled/default
-rm /etc/nginx/sites-available/default
-wget -q -O /etc/nginx/nginx.conf "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/nginx.conf"
-rm /etc/nginx/conf.d/vps.conf
-wget -q O /etc/nginx/conf.d/vps.conf "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/vps.conf"
-/etc/init.d/nginx restart
+rm -f /etc/nginx/sites-enabled/default
+rm -f /etc/nginx/sites-available/default
 
-mkdir /etc/systemd/system/nginx.service.d
+# ---------------------------------------------------------------
+# Unduhan aman: nginx.conf yang kosong membuat nginx gagal start dan
+# SEMUA path WebSocket mati. wget -O mengosongkan file tujuan sebelum
+# unduhan selesai, jadi jaringan yang putus di tengah jalan sudah cukup
+# untuk merusak instalasi. Unduh ke berkas sementara dulu, pastikan
+# isinya masuk akal, baru pasang.
+# ---------------------------------------------------------------
+ambil_nginx() {
+    local url="$1" tujuan="$2" tmpf
+    tmpf=$(mktemp /tmp/ngx.XXXXXX) || return 1
+    if ! wget -q --timeout=25 --tries=2 -O "$tmpf" "$url"; then
+        rm -f "$tmpf"
+        echo -e "[ ${yell}WARN${NC} ] Gagal mengunduh $(basename "$tujuan"), file lama dipertahankan"
+        return 1
+    fi
+    # nginx.conf yang sah selalu memuat blok events/http; vps.conf memuat location
+    if [ ! -s "$tmpf" ]; then
+        rm -f "$tmpf"
+        echo -e "[ ${yell}WARN${NC} ] $(basename "$tujuan") kosong, file lama dipertahankan"
+        return 1
+    fi
+    mkdir -p "$(dirname "$tujuan")"
+    mv -f "$tmpf" "$tujuan"
+    return 0
+}
+
+ambil_nginx "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/nginx.conf" "/etc/nginx/nginx.conf"
+
+# Catatan: versi lama menulis "wget -q O /etc/nginx/conf.d/vps.conf" —
+# ada spasi antara -q dan O, sehingga wget membaca "O" sebagai URL dan
+# vps.conf tidak pernah terunduh sebagaimana dimaksud.
+ambil_nginx "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/vps.conf" "/etc/nginx/conf.d/vps.conf"
+
+# Jangan reload dengan config yang tidak sah: kalau nginx -t gagal,
+# nginx tetap memakai config lama yang masih jalan.
+if nginx -t 2>/dev/null; then
+    /etc/init.d/nginx restart
+else
+    echo -e "[ ${yell}WARN${NC} ] Konfigurasi nginx tidak valid, restart dilewati"
+fi
+
+mkdir -p /etc/systemd/system/nginx.service.d
 printf "[Service]\nExecStartPost=/bin/sleep 0.1\n" > /etc/systemd/system/nginx.service.d/override.conf
-rm /etc/nginx/conf.d/default.conf
+rm -f /etc/nginx/conf.d/default.conf
 systemctl daemon-reload
-service nginx restart
+if nginx -t 2>/dev/null; then
+    service nginx restart
+fi
 cd
-mkdir /home/vps
-mkdir /home/vps/public_html
+mkdir -p /home/vps/public_html
 wget -q -O /home/vps/public_html/index.html "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/multiport"
 wget -q -O /home/vps/public_html/.htaccess "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/.htaccess"
-mkdir /home/vps/public_html/ss-ws
-mkdir /home/vps/public_html/clash-ws
+mkdir -p /home/vps/public_html/ss-ws
+mkdir -p /home/vps/public_html/clash-ws
+
 # install badvpn
 cd
-wget -q -O /usr/bin/badvpn-udpgw "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/newudpgw"
-chmod +x /usr/bin/badvpn-udpgw
-sed -i '$ i\screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7100 --max-clients 500' /etc/rc.local
-sed -i '$ i\screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7200 --max-clients 500' /etc/rc.local
-sed -i '$ i\screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7300 --max-clients 500' /etc/rc.local
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7100 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7200 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7300 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7400 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7500 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7600 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7700 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7800 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7900 --max-clients 500
+# Unduh ke berkas sementara: badvpn-udpgw yang kosong akan membuat semua
+# sesi screen langsung mati tanpa pesan yang jelas.
+_bv_tmp=$(mktemp /tmp/badvpn.XXXXXX)
+if wget -q --timeout=25 --tries=2 -O "$_bv_tmp" "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/newudpgw" \
+   && [ -s "$_bv_tmp" ]; then
+    mv -f "$_bv_tmp" /usr/bin/badvpn-udpgw
+    chmod +x /usr/bin/badvpn-udpgw
+else
+    rm -f "$_bv_tmp"
+    echo -e "[ ${yell}WARN${NC} ] badvpn-udpgw gagal diunduh, port UDPGW dilewati"
+fi
+
+# rc.local: tulis SEMUA port yang dijalankan. Versi lama hanya menulis
+# 7100/7200/7300 padahal screen menjalankan 7100-7900, sehingga setelah
+# reboot enam port badvpn tidak pernah hidup lagi. Ditulis ulang
+# sekaligus supaya instalasi berulang tidak menumpuk baris.
+if [ -f /etc/rc.local ]; then
+    sed -i '/badvpn-udpgw --listen-addr/d' /etc/rc.local
+    for _bp in 7100 7200 7300 7400 7500 7600 7700 7800 7900; do
+        sed -i "\$ i\\screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:${_bp} --max-clients 500" /etc/rc.local
+    done
+fi
+
+# Hentikan sesi badvpn lama supaya instalasi ulang tidak menumpuk
+# proses dengan port yang sama.
+for _bp in 7100 7200 7300 7400 7500 7600 7700 7800 7900; do
+    screen -S badvpn -X quit >/dev/null 2>&1
+done
+
+for _bp in 7100 7200 7300 7400 7500 7600 7700 7800 7900; do
+    screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:${_bp} --max-clients 500
+done
 
 # setting port ssh
 cd
