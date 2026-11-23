@@ -105,6 +105,75 @@ svc_state() {
     [ "$s" = "active" ] && printf '%sON%s' "$GREEN" "$NC" || printf '%sOFF%s' "$RED" "$NC"
 }
 
+# --- uninstall & reinstall ---
+# uninstall.sh diunduh saat dibutuhkan, jadi tidak perlu ikut terpasang
+# di /usr/bin sejak awal.
+_uninst_dl() {
+    if [ ! -f /root/uninstall.sh ]; then
+        wget -q -O /root/uninstall.sh \
+            https://raw.githubusercontent.com/Masbrow33/btr/main/uninstall.sh || {
+            _bline "Gagal mengunduh uninstall.sh"
+            return 1
+        }
+        chmod +x /root/uninstall.sh
+    fi
+    return 0
+}
+
+uninstmenu() {
+    _uninst_dl || { sleep 3; menu; return; }
+    clear
+    bash /root/uninstall.sh
+    echo ""
+    printf '  Tekan ENTER untuk kembali ke menu... '
+    read -r
+    clear
+    menu
+}
+
+reinstmenu() {
+    clear
+    _box_top
+    _bcenter "• INSTAL ULANG •"
+    _box_bot
+    _box_top
+    _bline "Bersihkan sisa instalasi, lalu pasang ulang."
+    _bline ""
+    _bline "Semua akun, config, dan paket autoscript"
+    _bline "akan DIHAPUS. SSH tidak disentuh."
+    _box_bot
+    echo ""
+    printf '  Ketik %sYA%s untuk melanjutkan : ' "$RED" "$NC"
+    read -r _yn
+    if [ "${_yn^^}" != "YA" ]; then
+        _bline "Dibatalkan."
+        sleep 2
+        clear
+        menu
+        return
+    fi
+
+    _uninst_dl || { sleep 3; menu; return; }
+    clear
+    echo "  Membersihkan..."
+    bash /root/uninstall.sh --all
+    sleep 2
+
+    clear
+    echo "  Memasang ulang..."
+    cd /root || return
+    rm -f setup.sh
+    wget -q -O setup.sh \
+        https://raw.githubusercontent.com/Masbrow33/btr/main/setup.sh || {
+        echo "  Gagal mengunduh setup.sh"
+        return
+    }
+    chmod +x setup.sh
+    echo "  setup.sh diunduh ($(stat -c%s setup.sh) byte). Menjalankan..."
+    sleep 2
+    exec bash /root/setup.sh
+}
+
 ###########- DATA -##############
 IFACE=$(ip -o -4 route show default 2>/dev/null | awk '{print $5}' | head -1)
 [ -z "$IFACE" ] && IFACE="eth0"
@@ -259,6 +328,12 @@ else
 fi
 echo -e "$BOX_B"
 
+# Uninstall tersedia untuk semua, bukan hanya admin — supaya pemilik VPS
+# bisa membersihkan sisa instalasi sebelum memasang ulang.
+echo -e "$BOX_T"
+bmenu2 "15" "UNINSTALL" "16" "REINSTALL"
+echo -e "$BOX_B"
+
 if [ "$(printf '%s\n%s\n' "$serverV" "$myver" | sort -V | tail -1)" != "$myver" ]; then
     echo -e "${RED}${BOX_T/$COLOR1/$RED}"
     bmenu1 "100" "UPDATE TO V$serverV"
@@ -295,6 +370,8 @@ case $opt in
 12)    clear ; info ;;
 13)    clear ; $ressee ;;
 14)    clear ; $bottt ;;
+15)    clear ; uninstmenu ;;
+16)    clear ; reinstmenu ;;
 100)   clear ; $up2u ;;
 00 | 0) clear ; menu ;;
 *)     clear ; menu ;;

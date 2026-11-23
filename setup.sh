@@ -18,12 +18,24 @@ fi
 # menghabiskan memori sampai VPS tidak bisa di-SSH.
 exec 9>/var/lock/yokkovpn-install.lock 2>/dev/null
 if ! flock -n 9; then
+    _pid=$(fuser /var/lock/yokkovpn-install.lock 2>/dev/null | tr -d ' ')
     echo ""
-    echo -e "\033[1;33m[ PERHATIAN ]\033[0m Instalasi lain sedang berjalan."
+    echo -e "\033[1;33m[ PERHATIAN ]\033[0m Instalasi lain sedang berjalan${_pid:+ (PID $_pid)}."
     echo -e "\033[1;33m[ PERHATIAN ]\033[0m Tunggu sampai selesai, jangan jalankan ulang."
     echo ""
-    echo -e "  Pantau prosesnya:  \033[1;32mps aux | grep -c setup.sh\033[0m"
-    echo -e "  Lihat log paket :  \033[1;32mtail -f /var/log/yokkovpn-deps.log\033[0m"
+    echo "  Kemungkinan besar itu instalasi yang sudah SELESAI tetapi"
+    echo "  tertahan di prompt reboot. Cek dulu:"
+    echo ""
+    echo -e "    \033[1;32mps aux | grep setup.sh\033[0m        # masih ada prosesnya?"
+    echo -e "    \033[1;32mscreen -ls\033[0m                    # ada sesi 'setup'?"
+    echo -e "    \033[1;32mtail -5 /root/log-install.txt\033[0m  # instalasi sudah tuntas?"
+    echo ""
+    echo "  Kalau instalasi sudah selesai, hentikan prosesnya lalu ulangi:"
+    echo -e "    \033[1;32mpkill -f 'bash ./setup.sh'\033[0m"
+    echo -e "    \033[1;32mscreen -S setup -X quit\033[0m"
+    echo ""
+    echo "  Untuk membersihkan semuanya sebelum instal ulang, pakai menu"
+    echo "  uninstall:  bash /root/uninstall.sh"
     echo ""
     exit 1
 fi
@@ -73,7 +85,19 @@ export IP=$( curl -s https://ipinfo.io/ip/ )
 
 # // License Validating
 echo ""
-read -p "Input Your License Key : " Input_License_Key
+# Prompt dicetak dengan echo, bukan lewat "read -p". Prompt bawaan read
+# hanya tampil bila stdin berupa terminal; kalau script dijalankan lewat
+# pipa, cron, atau pembungkus lain, pengguna tidak melihat permintaan
+# token sama sekali dan script seolah berhenti tanpa alasan.
+echo -e "${CYAN}┌─────────────────────────────────────────────────┐${NC}"
+echo -e "${CYAN}│${NC}  \e[1mAKTIVASI SCRIPT\e[0m                               ${CYAN}│${NC}"
+echo -e "${CYAN}│${NC}  Masukkan license key untuk melanjutkan.        ${CYAN}│${NC}"
+echo -e "${CYAN}│${NC}  Tekan ENTER tanpa isi untuk membatalkan.       ${CYAN}│${NC}"
+echo -e "${CYAN}└─────────────────────────────────────────────────┘${NC}"
+echo ""
+printf '  License Key : '
+read -r Input_License_Key
+echo ""
 
 # // Checking Input Blank
 if [[ $Input_License_Key ==  "" ]]; then
@@ -165,7 +189,8 @@ fi
 
 # // Validate Successfull
 echo ""
-read -p "$( echo -e "Press ${CYAN}[ ${NC}${GREEN}Enter${NC} ${CYAN}]${NC} For Starting Installation") "
+printf '  Tekan %sENTER%s untuk mulai instalasi... ' "${GREEN}" "${NC}"
+read -r
 echo ""
 
 # // Installing Update
@@ -352,7 +377,8 @@ clear
 
 yellow "Add Domain for vmess/vless/trojan dll"
 echo " "
-read -rp "Input ur domain : " -e pp
+printf '  Input ur domain : '
+read -r pp
 # Domain kosong membuat nginx gagal start (server_name tanpa argumen)
 # dan Xray tidak bisa membuat sertifikat. Pakai placeholder yang aman.
 if [ -z "$pp" ]; then
