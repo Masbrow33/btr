@@ -227,18 +227,24 @@ _bline "Remarks     : ${user}"
 _bline "Expired On  : $exp"
 _bline "Host/IP     : ${domain}"
 _bline "Port        : ${tr}"
-_bline "Key         : ${uuid}"
 _bline "Path        : /trojan-ws"
-_bline "Path WSS    : wss://${domain}/trojan-ws"
 _bline "ServiceName : trojan-grpc"
 _box_bot
-_box_top
-_bline "Link WS :"
-_bline "${trojanlink}"
-_bline ""
-_bline "Link GRPC :"
-_bline "${trojanlink1}"
-_box_bot
+echo ""
+# Key dan link dicetak di LUAR kotak, tanpa pemotongan, supaya bisa
+# disalin utuh ke aplikasi klien.
+_braw "Key / Password :"
+_braw "${uuid}"
+echo ""
+_braw "Path WSS :"
+_braw "wss://${domain}/trojan-ws"
+echo ""
+_braw "Link WS :"
+_braw "${trojanlink}"
+echo ""
+_braw "Link GRPC :"
+_braw "${trojanlink1}"
+echo ""
 _byline
 echo "" 
 read -n 1 -s -r -p "   Press any key to back on menu"

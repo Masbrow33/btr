@@ -49,6 +49,15 @@ _box_top() { printf '%s┌%s┐%s\n' "$COLOR1" "$(_dashes $VPSBOX_W)" "$NC"; }
 _box_bot() { printf '%s└%s┘%s\n' "$COLOR1" "$(_dashes $VPSBOX_W)" "$NC"; }
 _box_mid() { printf '%s├%s┤%s\n' "$COLOR1" "$(_dashes $VPSBOX_W)" "$NC"; }
 
+# baris mentah TANPA kotak dan TANPA pemotongan.
+# Dipakai untuk UUID dan link (vless://, vmess://, trojan://, ss://) yang
+# panjangnya 40-150 karakter. Kotak hanya 49 kolom, jadi _bline memotong
+# nilai tersebut dan hasilnya tidak bisa disalin ke aplikasi klien.
+_braw() { printf '%s\n' "$1"; }
+
+# pemisah tipis selebar kotak, untuk memisahkan bagian yang bisa disalin
+_bsep() { printf '%s%s%s\n' "$COLOR1" "$(_dashes $VPSBOX_W)" "$NC"; }
+
 # isi rata kiri
 _bline() {
     local t w pad
