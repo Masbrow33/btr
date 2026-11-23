@@ -88,6 +88,9 @@ stop_services() {
 remove_files() {
     echo -e "${YELLOW}[2] Hapus file konfigurasi${NC}"
     local paths="/etc/xray /etc/yokkovpn /etc/v2ray /usr/local/etc/xray
+        /usr/local/share/xray
+        /etc/systemd/system/xray.service /etc/systemd/system/xray@.service
+        /lib/systemd/system/xray.service /lib/systemd/system/xray@.service
         /var/log/xray /usr/local/lib/vpsbox.sh
         /home/vps/public_html/akun /home/vps/public_html/ss-ws
         /home/vps/public_html/clash-ws
@@ -95,6 +98,7 @@ remove_files() {
         /usr/local/bin/ws-dropbear /usr/local/bin/ws-openssh /usr/local/bin/ws-stunnel
         /usr/bin/ssh-wsenabler /usr/bin/proxy3.js /usr/bin/bbt
         /usr/local/bin/sldns-client /usr/local/bin/badvpn-udpgw
+        /usr/local/ddos /usr/local/sbin/ddos
         /root/log-install.txt /root/domain /root/scdomain /root/ipvps
         /var/lib/yokkovpn-pro /var/lib/vnstat"
     for p in $paths; do
@@ -102,6 +106,12 @@ remove_files() {
         run "rm -rf $p"
         say "  $p"
     done
+    # systemd masih mengingat unit xray yang filenya baru dihapus
+    if [ "$DRY" = "0" ]; then
+        systemctl daemon-reload >/dev/null 2>&1 || true
+        systemctl reset-failed xray xray@* >/dev/null 2>&1 || true
+    fi
+
     # menu
     for m in /usr/bin/menu /usr/bin/menu-*; do
         [ -e "$m" ] || continue

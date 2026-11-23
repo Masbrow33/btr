@@ -298,11 +298,16 @@ sed -i 's/ENABLED=0/ENABLED=1/g' /etc/default/stunnel4
 apt -y install fail2ban
 
 # Instal DDOS Flate
+# Dulu blok ini memakai 'exit 0' bila /usr/local/ddos sudah ada.
+# Akibatnya instalasi ulang berhenti di sini dan SELURUH sisa script
+# dilewati: banner, tuning sshd, swap 2 GB, menu, cron, squid,
+# badvpn, sampai chown public_html. Gejalanya halus — instalasi
+# terlihat sukses, tapi banyak bagian tidak pernah dipasang.
+# Sekarang cukup dilewati, tidak menghentikan script.
 if [ -d '/usr/local/ddos' ]; then
-	echo; echo; echo "Please un-install the previous version first"
-	exit 0
+    echo -e "[ ${green}ok${NC} ] DDOS Deflate sudah ada, pemasangan dilewati"
 else
-	mkdir /usr/local/ddos
+    mkdir /usr/local/ddos
 fi
 clear
 echo; echo 'Installing DOS-Deflate 0.6'; echo
