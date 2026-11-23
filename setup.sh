@@ -533,5 +533,26 @@ rm /root/insshws.sh
 rm /root/update.sh
 secs_to_human "$(($(date +%s) - ${start}))" | tee -a log-install.txt
 echo -e ""
-read -n 1 -s -r -p "Press any key to reboot"
-reboot
+echo "------------------------------------------------------------"
+echo -e "\033[1;32m[ SELESAI ]\033[0m Instalasi selesai."
+echo ""
+echo "  VPS perlu di-reboot supaya semua layanan berjalan normal."
+echo "  Tekan \033[1;32mENTER\033[0m untuk reboot sekarang,"
+echo "  atau tunggu 60 detik (reboot otomatis)."
+echo "  Tekan \033[1;33mN\033[0m lalu ENTER untuk reboot manual nanti."
+echo ""
+read -t 60 -r -p "  Pilihan [ENTER/n] : " _reb
+case "${_reb:-}" in
+    [Nn]|[Nn][Oo])
+        echo ""
+        echo -e "\033[1;33m[ INFO ]\033[0m Reboot dilewati. Jalankan 'reboot' kapan saja."
+        echo "  Layanan sudah aktif sekarang; reboot hanya merapikan state."
+        exit 0
+        ;;
+    *)
+        echo ""
+        echo -e "\033[1;32m[ INFO ]\033[0m Rebooting..."
+        sleep 2
+        reboot
+        ;;
+esac
