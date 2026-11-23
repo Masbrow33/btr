@@ -1,35 +1,123 @@
 #!/bin/bash
-dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
-biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
-###########- COLOR CODE -##############
-echo -e " [INFO] Downloading Update File"
-sleep 2
+# ==========================================================
+#  update.sh — perbarui seluruh menu & library dari repo
+#
+#  Kenapa ditulis ulang: versi lama memakai
+#      wget -q -O /usr/bin/menu <url>
+#  langsung ke file tujuan. Bila unduhan gagal (jaringan putus,
+#  GitHub lambat, DNS bermasalah), wget sudah MENIMPA file lama
+#  dengan berkas kosong sebelum menyadari gagal. Hasilnya menu yang
+#  tadinya berfungsi langsung rusak, dan tidak bisa dipulihkan dari
+#  mesin itu sendiri karena menu untuk memperbaikinya juga rusak.
+#
+#  Versi ini mengunduh ke berkas sementara, memeriksa bahwa isinya
+#  tidak kosong dan sintaksnya sah, baru memindahkannya menimpa yang
+#  lama. Bila satu berkas gagal, berkas lama dibiarkan utuh.
+# ==========================================================
 
-# WAJIB paling awal: library penggambar kotak. Semua menu memanggil
-# _box_top / _bline / _bmenu2 dari file ini. Kalau library tidak ada,
-# menu akan error "command not found" dan kotak tidak tergambar.
-mkdir -p /usr/local/lib
-wget -q -O /usr/local/lib/vpsbox.sh "https://raw.githubusercontent.com/Masbrow33/btr/main/lib/vpsbox.sh" && chmod 644 /usr/local/lib/vpsbox.sh
+RED=$'\033[0;31m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[0;33m'
+CYAN=$'\033[0;36m'
+NC=$'\033[0m'
 
-wget -q -O /usr/bin/menu "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu.sh" && chmod +x /usr/bin/menu
-wget -q -O /usr/bin/menu-ss "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-ss.sh" && chmod +x /usr/bin/menu-ss
-wget -q -O /usr/bin/menu-vmess "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-vmess.sh" && chmod +x /usr/bin/menu-vmess
-wget -q -O /usr/bin/menu-vless "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-vless.sh" && chmod +x /usr/bin/menu-vless
-wget -q -O /usr/bin/menu-trojan "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-trojan.sh" && chmod +x /usr/bin/menu-trojan
-wget -q -O /usr/bin/menu-bot "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-bot.sh" && chmod +x /usr/bin/menu-bot
-wget -q -O /usr/bin/menu-ssh "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-ssh.sh" && chmod +x /usr/bin/menu-ssh
-wget -q -O /usr/bin/menu-set "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-set.sh" && chmod +x /usr/bin/menu-set
-wget -q -O /usr/bin/menu-theme "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-theme.sh" && chmod +x /usr/bin/menu-theme
-wget -q -O /usr/bin/menu-backup "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-backup.sh" && chmod +x /usr/bin/menu-backup
-wget -q -O /usr/bin/menu-ip "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-ip.sh" && chmod +x /usr/bin/menu-ip
-wget -q -O /usr/bin/menu-tor "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-tor.sh" && chmod +x /usr/bin/menu-tor
-wget -q -O /usr/bin/autoboot "https://raw.githubusercontent.com/Masbrow33/btr/main/update/autoboot.sh" && chmod +x /usr/bin/autoboot
-wget -q -O /usr/bin/menu-tcp "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-tcp.sh" && chmod +x /usr/bin/menu-tcp
-wget -q -O /usr/bin/rebootvps "https://raw.githubusercontent.com/Masbrow33/btr/main/corn/rebootvps.sh" && chmod +x /usr/bin/rebootvps
-wget -q -O /usr/bin/menu-dns "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-dns.sh" && chmod +x /usr/bin/menu-dns
-wget -q -O /usr/bin/info "https://raw.githubusercontent.com/Masbrow33/btr/main/update/info.sh" && chmod +x /usr/bin/info
-wget -q -O /usr/bin/mspeed "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-speedtest.sh" && chmod +x /usr/bin/mspeed
-wget -q -O /usr/bin/mbandwith "https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-bandwith.sh" && chmod +x /usr/bin/mbandwith
-echo -e " [INFO] Update Successfully"
-sleep 2
-exit
+RAW="https://raw.githubusercontent.com/Masbrow33/btr/main"
+TMP=$(mktemp -d /tmp/upd.XXXXXX) || { echo "Gagal membuat direktori sementara"; exit 1; }
+trap 'rm -rf "$TMP"' EXIT
+
+OK=0
+GAGAL=0
+GAGAL_LIST=""
+
+# ---------------------------------------------------------------- pengunduh aman
+aman_ambil() {
+    local path="$1" tujuan="$2" jenis="${3:-sh}"
+    local tmpf="$TMP/$(basename "$tujuan")"
+    local nama
+    nama=$(basename "$tujuan")
+
+    rm -f "$tmpf"
+
+    if ! wget -q --timeout=20 --tries=2 -O "$tmpf" "$RAW/$path"; then
+        printf '  %s[GAGAL]%s %-14s unduhan gagal\n' "$RED" "$NC" "$nama"
+        GAGAL=$((GAGAL + 1)); GAGAL_LIST="$GAGAL_LIST $nama"
+        return 1
+    fi
+
+    # Berkas kosong berarti wget melaporkan berhasil tetapi isinya tidak ada.
+    if [ ! -s "$tmpf" ]; then
+        printf '  %s[GAGAL]%s %-14s berkas kosong\n' "$RED" "$NC" "$nama"
+        GAGAL=$((GAGAL + 1)); GAGAL_LIST="$GAGAL_LIST $nama"
+        return 1
+    fi
+
+    # Berkas .sh wajib lolos pemeriksaan sintaks. Ini yang menangkap
+    # unduhan terpotong — jauh lebih baik gagal di sini daripada
+    # meninggalkan menu yang tidak bisa dijalankan.
+    if [ "$jenis" = "sh" ] && ! bash -n "$tmpf" 2>/dev/null; then
+        printf '  %s[GAGAL]%s %-14s sintaks rusak\n' "$RED" "$NC" "$nama"
+        GAGAL=$((GAGAL + 1)); GAGAL_LIST="$GAGAL_LIST $nama"
+        return 1
+    fi
+
+    mkdir -p "$(dirname "$tujuan")"
+    if mv -f "$tmpf" "$tujuan"; then
+        [ "$jenis" = "sh" ] && chmod +x "$tujuan"
+        printf '  %s[ ok ]%s %-14s %s byte\n' "$GREEN" "$NC" "$nama" "$(stat -c%s "$tujuan")"
+        OK=$((OK + 1))
+        return 0
+    fi
+
+    printf '  %s[GAGAL]%s %-14s tidak bisa menulis\n' "$RED" "$NC" "$nama"
+    GAGAL=$((GAGAL + 1)); GAGAL_LIST="$GAGAL_LIST $nama"
+    return 1
+}
+
+clear 2>/dev/null || true
+echo ""
+echo -e "${CYAN}┌─────────────────────────────────────────────────┐${NC}"
+echo -e "${CYAN}│${NC}               \033[1mUPDATE SCRIPT\033[0m                     ${CYAN}│${NC}"
+echo -e "${CYAN}└─────────────────────────────────────────────────┘${NC}"
+echo ""
+
+# ---------------------------------------------------------------- library dulu
+# Wajib paling awal: seluruh menu memanggil _box_top/_bline/_bmenu2 dari
+# berkas ini. Tanpa library, menu error "command not found".
+echo -e "  ${YELLOW}[1/3]${NC} Library"
+aman_ambil "lib/vpsbox.sh" "/usr/local/lib/vpsbox.sh"
+
+# ---------------------------------------------------------------- menu
+echo ""
+echo -e "  ${YELLOW}[2/3]${NC} Menu"
+for m in menu menu-ss menu-vmess menu-vless menu-trojan menu-bot menu-ssh \
+         menu-set menu-theme menu-backup menu-ip menu-tor menu-tcp menu-dns; do
+    aman_ambil "update/$m.sh" "/usr/bin/$m"
+done
+
+# Nama berkas di repo berbeda dari nama perintah yang dipasang.
+aman_ambil "update/menu-speedtest.sh" "/usr/bin/mspeed"
+aman_ambil "update/menu-bandwith.sh"  "/usr/bin/mbandwith"
+
+# ---------------------------------------------------------------- pendukung
+echo ""
+echo -e "  ${YELLOW}[3/3]${NC} Pendukung"
+aman_ambil "update/autoboot.sh" "/usr/bin/autoboot"
+aman_ambil "update/info.sh"     "/usr/bin/info"
+aman_ambil "corn/rebootvps.sh"  "/usr/bin/rebootvps"
+
+# ---------------------------------------------------------------- ringkasan
+echo ""
+echo -e "  ${CYAN}─────────────────────────────────────────────────${NC}"
+if [ "$GAGAL" -eq 0 ]; then
+    echo -e "  ${GREEN}[ SELESAI ]${NC} $OK berkas diperbarui."
+else
+    echo -e "  ${RED}[ PERHATIAN ]${NC} $OK berhasil, $GAGAL gagal."
+    echo "  Berkas yang gagal tetap memakai versi lama, jadi tidak ada yang rusak:"
+    for f in $GAGAL_LIST; do echo "    - $f"; done
+    echo ""
+    echo "  Periksa koneksi lalu jalankan ulang update dari menu."
+fi
+echo ""
+printf '  Tekan ENTER untuk kembali... '
+read -r
+clear 2>/dev/null || true
