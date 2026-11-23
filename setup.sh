@@ -12,6 +12,22 @@ if [ "${EUID}" -ne 0 ]; then
 		exit 1
 fi
 
+# // Satu instalasi dalam satu waktu
+# Tanpa ini, menjalankan script dua kali (misalnya karena mengira
+# instalasi berhenti) membuat dua proses memperebutkan lock dpkg dan
+# menghabiskan memori sampai VPS tidak bisa di-SSH.
+exec 9>/var/lock/yokkovpn-install.lock 2>/dev/null
+if ! flock -n 9; then
+    echo ""
+    echo -e "\033[1;33m[ PERHATIAN ]\033[0m Instalasi lain sedang berjalan."
+    echo -e "\033[1;33m[ PERHATIAN ]\033[0m Tunggu sampai selesai, jangan jalankan ulang."
+    echo ""
+    echo -e "  Pantau prosesnya:  \033[1;32mps aux | grep -c setup.sh\033[0m"
+    echo -e "  Lihat log paket :  \033[1;32mtail -f /var/log/yokkovpn-deps.log\033[0m"
+    echo ""
+    exit 1
+fi
+
 # // Exporting Language to UTF-8
 export LC_ALL='C.UTF-8'
 export LANG='C.UTF-8'
