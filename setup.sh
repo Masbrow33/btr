@@ -278,7 +278,10 @@ if [ "$BASH" ]; then
 fi
 
 mesg n || true
-clear
+
+# clear hanya untuk login interaktif, supaya output
+# `ssh host "perintah"` tidak tercemar kode escape.
+[ -t 0 ] && clear
 END
 chmod 644 /root/.profile
 
@@ -421,8 +424,15 @@ if [ "$BASH" ]; then
 fi
 
 mesg n || true
-clear
-menu
+
+# Menu hanya untuk login interaktif.
+# Tanpa penjaga ini, setiap `ssh host "perintah"` ikut membuka menu
+# lalu menggantung, sehingga perintah tidak pernah dijalankan
+# (gejalanya: "exec request failed on channel 0").
+if [ -t 0 ] && [ -n "${SSH_TTY:-}" ]; then
+  clear
+  menu
+fi
 END
 chmod 644 /root/.profile
 

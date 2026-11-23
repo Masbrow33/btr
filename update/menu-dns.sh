@@ -22,6 +22,10 @@ USERGIT=$(cat /etc/yokkovpn/github/username 2>/dev/null)
 
 export RED='\033[0;31m';
 export GREEN='\033[0;32m';
+# RED/GREEN ditimpa setelah init, jadi harus dikonversi lagi —
+# kalau tidak, printf '%s' mencetak teks "\033[0;32m" apa adanya.
+RED=$(printf '%b' "$RED")
+GREEN=$(printf '%b' "$GREEN")
 export ERROR="[${RED}ERROR${NC}]";
 export INFO="[${GREEN}INFO${NC}]";
 
