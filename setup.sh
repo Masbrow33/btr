@@ -90,7 +90,7 @@ echo ""
 # pipa, cron, atau pembungkus lain, pengguna tidak melihat permintaan
 # token sama sekali dan script seolah berhenti tanpa alasan.
 echo -e "${CYAN}┌─────────────────────────────────────────────────┐${NC}"
-echo -e "${CYAN}│${NC}  \e[1mAKTIVASI SCRIPT\e[0m                               ${CYAN}│${NC}"
+echo -e "${CYAN}│${NC}  \e[1mAKTIVASI SCRIPT\e[0m                                ${CYAN}│${NC}"
 echo -e "${CYAN}│${NC}  Masukkan license key untuk melanjutkan.        ${CYAN}│${NC}"
 echo -e "${CYAN}│${NC}  Tekan ENTER tanpa isi untuk membatalkan.       ${CYAN}│${NC}"
 echo -e "${CYAN}└─────────────────────────────────────────────────┘${NC}"
