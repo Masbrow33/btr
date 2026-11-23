@@ -290,6 +290,14 @@ apt install git curl -y >/dev/null 2>&1
 echo -e "[ ${green}INFO${NC} ] Aight good ... installation file is ready"
 sleep 3
 
+# Bersihkan salinan lama. wget tanpa -O tidak menimpa: kalau file sudah
+# ada, versi baru disimpan sebagai file.1 dan file LAMA yang dijalankan.
+# Akibatnya instalasi menjalankan kode usang dan config berlipat.
+rm -f /root/ssh-vpn.sh /root/ssh-vpn.sh.[0-9]*
+rm -f /root/dependencies.sh /root/ins-xray.sh /root/install-sldns.sh
+rm -f /root/set-br.sh /root/insshws.sh /root/update.sh
+rm -f /root/ssh-vpn.sh.[0-9]*
+
 mkdir -p /etc/yokkovpn
 mkdir -p /etc/yokkovpn/theme
 mkdir -p /var/lib/yokkovpn-pro >/dev/null 2>&1
@@ -322,7 +330,7 @@ esac
 fi
 
 echo ""
-wget -q https://raw.githubusercontent.com/Masbrow33/dxavier/main/dependencies.sh;chmod +x dependencies.sh;./dependencies.sh
+wget -q -O dependencies.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/dependencies.sh;chmod +x dependencies.sh;./dependencies.sh
 rm dependencies.sh
 clear
 
@@ -397,22 +405,22 @@ unset _tf _uniq _cnow
 echo -e "$green[INFO]$NC Install SSH & OpenVPN!"
 sleep 2
 clear
-wget https://raw.githubusercontent.com/Masbrow33/btr/main/ssh/ssh-vpn.sh && chmod +x ssh-vpn.sh && ./ssh-vpn.sh
+wget -O ssh-vpn.sh https://raw.githubusercontent.com/Masbrow33/btr/main/ssh/ssh-vpn.sh && chmod +x ssh-vpn.sh && ./ssh-vpn.sh
 #Instal Xray
 echo -e "$green[INFO]$NC Install Install XRAY!"
 sleep 2
 clear
-wget https://raw.githubusercontent.com/Masbrow33/dxavier/main/xray/ins-xray.sh && chmod +x ins-xray.sh && ./ins-xray.sh
+wget -O ins-xray.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/xray/ins-xray.sh && chmod +x ins-xray.sh && ./ins-xray.sh
 clear
-wget https://raw.githubusercontent.com/Masbrow33/dxavier/main/slowdnss/install-sldns.sh && chmod +x install-sldns.sh && ./install-sldns.sh
+wget -O install-sldns.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/slowdnss/install-sldns.sh && chmod +x install-sldns.sh && ./install-sldns.sh
 clear
-wget https://raw.githubusercontent.com/Masbrow33/dxavier/main/backup/set-br.sh && chmod +x set-br.sh && ./set-br.sh
+wget -O set-br.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/backup/set-br.sh && chmod +x set-br.sh && ./set-br.sh
 clear
-wget https://raw.githubusercontent.com/Masbrow33/dxavier/main/websocket/insshws.sh && chmod +x insshws.sh && ./insshws.sh
+wget -O insshws.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/websocket/insshws.sh && chmod +x insshws.sh && ./insshws.sh
 clear
 echo -e "$green[INFO]$NC Download Extra Menu"
 sleep 2
-wget https://raw.githubusercontent.com/Masbrow33/btr/main/update/update.sh && chmod +x update.sh && ./update.sh
+wget -O update.sh https://raw.githubusercontent.com/Masbrow33/btr/main/update/update.sh && chmod +x update.sh && ./update.sh
 clear
 cat> /root/.profile << 'END'
 # ~/.profile: executed by Bourne-compatible login shells.
