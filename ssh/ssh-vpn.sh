@@ -521,12 +521,28 @@ refresh_pattern ^ftp:           1440    20%     10080
 refresh_pattern ^gopher:        1440    0%      1440
 refresh_pattern -i (/cgi-bin/|\?) 0     0%      0
 refresh_pattern .               0       20%     4320
+
+# Squid 6 MENOLAK start tanpa cache store: proses anak keluar dengan
+# status 1 dan pesan "No cache_dir stores are configured", lalu systemd
+# menyerah dengan "repeated, frequent failures". cache_dir wajib ada.
+cache_dir ufs /var/spool/squid 100 16 256
 SQEOF
+        mkdir -p /var/spool/squid /var/log/squid
+        chown -R proxy:proxy /var/spool/squid /var/log/squid 2>/dev/null || true
+        chmod 750 /var/spool/squid /var/log/squid 2>/dev/null || true
+        squid -z >/dev/null 2>&1 || true
+    fi
+    # pastikan cache_dir ada juga pada config lama yang sudah terpasang
+    if ! grep -q '^cache_dir' /etc/squid/squid.conf 2>/dev/null; then
+        printf '\ncache_dir ufs /var/spool/squid 100 16 256\n' >> /etc/squid/squid.conf
         mkdir -p /var/spool/squid
         chown -R proxy:proxy /var/spool/squid 2>/dev/null || true
         squid -z >/dev/null 2>&1 || true
     fi
     systemctl enable squid >/dev/null 2>&1 || true
+    # reset-failed: tanpa ini, systemd menolak start ulang karena
+    # kegagalan sebelumnya sudah dihitung
+    systemctl reset-failed squid >/dev/null 2>&1 || true
     systemctl restart squid >/dev/null 2>&1 || true
     if systemctl is-active squid >/dev/null 2>&1; then
         echo -e "[ ${green}ok${NC} ] Squid aktif di port 3128"
