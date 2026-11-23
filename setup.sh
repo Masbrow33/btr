@@ -340,37 +340,37 @@ echo "$pp" > /etc/xray/scdomain
 echo "IP=$pp" > /var/lib/yokkovpn-pro/ipvps.conf
 
 #THEME RED
-cat <<EOF>> /etc/yokkovpn/theme/red
+cat <<EOF> /etc/yokkovpn/theme/red
 BG : \E[40;1;41m
 TEXT : \033[0;31m
 EOF
 #THEME BLUE
-cat <<EOF>> /etc/yokkovpn/theme/blue
+cat <<EOF> /etc/yokkovpn/theme/blue
 BG : \E[40;1;44m
 TEXT : \033[0;34m
 EOF
 #THEME GREEN
-cat <<EOF>> /etc/yokkovpn/theme/green
+cat <<EOF> /etc/yokkovpn/theme/green
 BG : \E[40;1;42m
 TEXT : \033[0;32m
 EOF
 #THEME YELLOW
-cat <<EOF>> /etc/yokkovpn/theme/yellow
+cat <<EOF> /etc/yokkovpn/theme/yellow
 BG : \E[40;1;43m
 TEXT : \033[0;33m
 EOF
 #THEME MAGENTA
-cat <<EOF>> /etc/yokkovpn/theme/magenta
+cat <<EOF> /etc/yokkovpn/theme/magenta
 BG : \E[40;1;43m
 TEXT : \033[0;33m
 EOF
 #THEME CYAN
-cat <<EOF>> /etc/yokkovpn/theme/cyan
+cat <<EOF> /etc/yokkovpn/theme/cyan
 BG : \E[40;1;46m
 TEXT : \033[0;36m
 EOF
 #THEME CONFIG
-cat <<EOF>> /etc/yokkovpn/theme/color.conf
+cat <<EOF> /etc/yokkovpn/theme/color.conf
 blue
 EOF
     

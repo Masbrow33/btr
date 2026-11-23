@@ -7,7 +7,9 @@
 export LC_ALL=C.UTF-8 2>/dev/null
 
 ###########- COLOR CODE -##############
-colornow=$(cat /etc/yokkovpn/theme/color.conf 2>/dev/null)
+colornow=$(head -1 /etc/yokkovpn/theme/color.conf 2>/dev/null | tr -d ' \r\n')
+[ -z "$colornow" ] && colornow=green
+[ -f "/etc/yokkovpn/theme/$colornow" ] || colornow=green
 [ -z "$colornow" ] && colornow="green"
 NC=$'\033[0m'
 RED=$'\033[0;31m'
