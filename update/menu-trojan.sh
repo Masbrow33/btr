@@ -1,4 +1,16 @@
 #!/bin/bash
+
+# --- pembatas rekursi ---
+# Menu memanggil dirinya sendiri untuk "kembali ke menu". Bila stdin
+# bukan terminal (pipa, cron, skrip), read langsung mengembalikan kosong
+# sehingga rekursi tidak pernah berhenti: RAM dan PID habis (fork bomb).
+# Saat interaktif (TTY) tidak dibatasi, jadi perilaku normal tidak berubah.
+if [ ! -t 0 ]; then
+    _vd=$(( ${VPSBOX_DEPTH:-0} + 1 ))
+    if [ "$_vd" -gt 8 ]; then exit 0; fi
+    export VPSBOX_DEPTH=$_vd
+fi
+# --- akhir pembatas ---
 [ -f /usr/local/lib/vpsbox.sh ] && . /usr/local/lib/vpsbox.sh && vpsbox_init
 dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
@@ -244,6 +256,29 @@ _braw "${trojanlink}"
 echo ""
 _braw "Link GRPC :"
 _braw "${trojanlink1}"
+echo ""
+urlakun=$(_akun_web trojan "$user" <<END
+EKO BELLICK PREMIUM — Akun TROJAN
+=================================
+Remarks    : $user
+Expired On : $exp
+Domain     : $domain
+
+Password   : $uuid
+Port       : $tr
+Path       : /trojan-ws
+Path WSS   : wss://$domain/trojan-ws
+ServiceName: trojan-grpc
+
+Link WS :
+$trojanlink
+
+Link GRPC :
+$trojanlink1
+END
+)
+_braw "Link akun (buka di browser) :"
+_braw "$urlakun"
 echo ""
 _byline
 echo "" 

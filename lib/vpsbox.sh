@@ -58,6 +58,32 @@ _braw() { printf '%s\n' "$1"; }
 # pemisah tipis selebar kotak, untuk memisahkan bagian yang bisa disalin
 _bsep() { printf '%s%s%s\n' "$COLOR1" "$(_dashes $VPSBOX_W)" "$NC"; }
 
+# Simpan detail akun sebagai .txt di public_html supaya bisa dibuka dan
+# disalin dari browser (HP lebih mudah: tekan lama -> copy).
+# Isi dibaca dari stdin. Hasil: URL https yang dicetak ke layar.
+# Nama file memakai token acak 8 karakter supaya tidak bisa ditebak orang
+# lain yang tahu nama user-nya.
+_akun_web() {
+    local proto="$1" user="$2"
+    local dir="/home/vps/public_html/akun"
+    local dom tok f
+    dom=$(cat /etc/xray/domain 2>/dev/null | tr -d ' \r\n')
+    [ -z "$dom" ] && dom=$(cat /root/domain 2>/dev/null | tr -d ' \r\n')
+    tok=$(head -c 4 /dev/urandom 2>/dev/null | od -An -tx1 | tr -d ' \n')
+    [ -z "$tok" ] && tok=$(printf '%04x' $((RANDOM * RANDOM)) | cut -c1-8)
+
+    mkdir -p "$dir" 2>/dev/null
+    # bersihkan file lama untuk user+proto yang sama supaya tidak menumpuk
+    rm -f "$dir/${proto}-${user}-"*.txt 2>/dev/null
+
+    f="$dir/${proto}-${user}-${tok}.txt"
+    cat > "$f"
+    chmod 644 "$f" 2>/dev/null
+    chown www-data:www-data "$f" 2>/dev/null || chown www-data:www-data "$dir" 2>/dev/null
+
+    printf 'https://%s/akun/%s-%s-%s.txt\n' "$dom" "$proto" "$user" "$tok"
+}
+
 # isi rata kiri
 _bline() {
     local t w pad

@@ -1,4 +1,16 @@
 #!/bin/bash
+
+# --- pembatas rekursi ---
+# Menu memanggil dirinya sendiri untuk "kembali ke menu". Bila stdin
+# bukan terminal (pipa, cron, skrip), read langsung mengembalikan kosong
+# sehingga rekursi tidak pernah berhenti: RAM dan PID habis (fork bomb).
+# Saat interaktif (TTY) tidak dibatasi, jadi perilaku normal tidak berubah.
+if [ ! -t 0 ]; then
+    _vd=$(( ${VPSBOX_DEPTH:-0} + 1 ))
+    if [ "$_vd" -gt 8 ]; then exit 0; fi
+    export VPSBOX_DEPTH=$_vd
+fi
+# --- akhir pembatas ---
 [ -f /usr/local/lib/vpsbox.sh ] && . /usr/local/lib/vpsbox.sh && vpsbox_init
 dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
@@ -313,8 +325,34 @@ echo ""
 _braw "Link GRPC :"
 _braw "${shadowsockslink1}"
 echo ""
-_braw "Link JSON :"
-_braw "http://${domain}:81/ss-ws/ss-$user.txt"
+_braw "Link JSON (config lengkap) :"
+_braw "https://${domain}/ss-ws/ss-$user.txt"
+echo ""
+urlakun=$(_akun_web ss "$user" <<END
+EKO BELLICK PREMIUM — Akun SHADOWSOCKS
+======================================
+Remarks    : $user
+Expired On : $exp
+Domain     : $domain
+
+Password   : $uuid
+Cipher     : aes-128-gcm
+Network    : ws/grpc
+Path       : /ss-ws
+ServiceName: ss-grpc
+
+Link TLS :
+$shadowsockslink
+
+Link GRPC :
+$shadowsockslink1
+
+Config JSON lengkap :
+https://$domain/ss-ws/ss-$user.txt
+END
+)
+_braw "Link akun (buka di browser) :"
+_braw "$urlakun"
 echo ""
 _byline
 echo ""  
