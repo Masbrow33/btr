@@ -268,7 +268,7 @@ sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
 sysctl -w net.ipv6.conf.default.disable_ipv6=1 >/dev/null 2>&1
 
 coreselect=''
-cat> /root/.profile << END
+cat> /root/.profile << 'END'
 # ~/.profile: executed by Bourne-compatible login shells.
 
 if [ "$BASH" ]; then
@@ -280,7 +280,7 @@ fi
 mesg n || true
 
 # clear hanya untuk login interaktif, supaya output
-# `ssh host "perintah"` tidak tercemar kode escape.
+# perintah ssh jarak jauh tidak tercemar kode escape.
 [ -t 0 ] && clear
 END
 chmod 644 /root/.profile
@@ -414,7 +414,7 @@ echo -e "$green[INFO]$NC Download Extra Menu"
 sleep 2
 wget https://raw.githubusercontent.com/Masbrow33/btr/main/update/update.sh && chmod +x update.sh && ./update.sh
 clear
-cat> /root/.profile << END
+cat> /root/.profile << 'END'
 # ~/.profile: executed by Bourne-compatible login shells.
 
 if [ "$BASH" ]; then
@@ -426,7 +426,7 @@ fi
 mesg n || true
 
 # Menu hanya untuk login interaktif.
-# Tanpa penjaga ini, setiap `ssh host "perintah"` ikut membuka menu
+# Tanpa penjaga ini, setiap perintah ssh jarak jauh ikut membuka menu
 # lalu menggantung, sehingga perintah tidak pernah dijalankan
 # (gejalanya: "exec request failed on channel 0").
 if [ -t 0 ] && [ -n "${SSH_TTY:-}" ]; then
