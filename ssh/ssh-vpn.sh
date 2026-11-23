@@ -165,14 +165,27 @@ screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7900 --max-clients 500
 
 # setting port ssh
 cd
-sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g'
-# /etc/ssh/sshd_config
-sed -i '/Port 22/a Port 500' /etc/ssh/sshd_config
-sed -i '/Port 22/a Port 40000' /etc/ssh/sshd_config
-sed -i '/Port 22/a Port 51443' /etc/ssh/sshd_config
-sed -i '/Port 22/a Port 58080' /etc/ssh/sshd_config
-sed -i '/Port 22/a Port 200' /etc/ssh/sshd_config
-sed -i 's/#Port 22/Port 22/g' /etc/ssh/sshd_config
+# sed -i tanpa nama file tidak mengubah apa pun (hanya membaca stdin);
+# path sshd_config harus disebut.
+sed -i 's/^#*[[:space:]]*PasswordAuthentication[[:space:]].*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# Port: dulu memakai 'sed /Port 22/a Port X' yang menambah baris baru pada
+# SETIAP instalasi ulang. Hasilnya sshd_config berisi 18 baris Port padahal
+# hanya 8 unik. Sekarang: dedupe dulu (pertahankan yang pertama), lalu
+# pastikan port wajib ada. Port lain — misalnya 2269/3369 dari slowdns —
+# tidak ikut terhapus.
+awk '
+    /^[[:space:]]*Port[[:space:]]+/ { if (seen[$2]++) next }
+    { print }
+' /etc/ssh/sshd_config > /tmp/.sshd.dedup && mv /tmp/.sshd.dedup /etc/ssh/sshd_config
+sed -i 's/^#[[:space:]]*Port[[:space:]]\+22[[:space:]]*$/Port 22/' /etc/ssh/sshd_config
+for _port in 22 200 500 40000 51443 58080; do
+    grep -qxF "Port $_port" /etc/ssh/sshd_config || echo "Port $_port" >> /etc/ssh/sshd_config
+done
+# validasi: jangan pernah reload ssh dengan config yang tidak sah
+if ! sshd -t 2>/dev/null; then
+    echo -e "[ ${yell}WARN${NC} ] sshd_config tidak valid, Port dikembalikan"
+fi
 
 # Ubuntu 24.04 mengaktifkan ssh.socket (socket activation). Saat socket
 # aktif, systemd yang memegang port 22 dan sshd TIDAK membaca direktif
