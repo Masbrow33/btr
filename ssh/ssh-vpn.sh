@@ -377,27 +377,54 @@ apt -y install fail2ban
 if [ -d '/usr/local/ddos' ]; then
     echo -e "[ ${green}ok${NC} ] DDOS Deflate sudah ada, pemasangan dilewati"
 else
-    mkdir /usr/local/ddos
+    mkdir -p /usr/local/ddos
 fi
-clear
-echo; echo 'Installing DOS-Deflate 0.6'; echo
-echo; echo -n 'Downloading source files...'
-wget -q -O /usr/local/ddos/ddos.conf http://www.inetbase.com/scripts/ddos/ddos.conf
-echo -n '.'
-wget -q -O /usr/local/ddos/LICENSE http://www.inetbase.com/scripts/ddos/LICENSE
-echo -n '.'
-wget -q -O /usr/local/ddos/ignore.ip.list http://www.inetbase.com/scripts/ddos/ignore.ip.list
-echo -n '.'
-wget -q -O /usr/local/ddos/ddos.sh http://www.inetbase.com/scripts/ddos/ddos.sh
-chmod 0755 /usr/local/ddos/ddos.sh
-cp -s /usr/local/ddos/ddos.sh /usr/local/sbin/ddos
-echo '...done'
-echo; echo -n 'Creating cron to run script every minute.....(Default setting)'
-/usr/local/ddos/ddos.sh --cron > /dev/null 2>&1
-echo '.....done'
-echo; echo 'Installation has completed.'
-echo 'Config file is at /usr/local/ddos/ddos.conf'
-echo 'Please send in your comments and/or suggestions to zaf@vsnl.com'
+
+# ---------------------------------------------------------------
+# DDOS Deflate: sumber aslinya (inetbase.com) sudah tidak aktif —
+# keempat berkasnya menjawab 404. Versi lama tetap mengunduh,
+# meng-chmod berkas kosong menjadi executable, lalu memasang cron
+# yang menjalankannya tiap menit. Akibatnya cron gagal terus dan
+# /usr/local/sbin/ddos menunjuk skrip kosong.
+#
+# Sekarang: unduh ke berkas sementara, dan hanya pasang bila
+# ddos.sh benar-benar berisi skrip yang sah. Bila gagal, lewati
+# dengan pesan jelas — fail2ban tetap menjadi lapisan pertahanan.
+# ---------------------------------------------------------------
+echo ""
+echo 'DOS-Deflate: memeriksa ketersediaan...'
+
+# Kalau ddos.sh sudah ada DAN sah, jangan disentuh. Bisa jadi dipasang
+# dari sumber lain atau dari instalasi sebelumnya yang berhasil.
+if [ -s /usr/local/ddos/ddos.sh ] && bash -n /usr/local/ddos/ddos.sh 2>/dev/null; then
+    echo -e "[ ${green}ok${NC} ] DOS-Deflate sudah terpasang dan sah, dilewati"
+else
+    _ddos_tmp=$(mktemp /tmp/ddos.XXXXXX)
+    if wget -q --timeout=20 --tries=1 -O "$_ddos_tmp" http://www.inetbase.com/scripts/ddos/ddos.sh 2>/dev/null \
+       && [ -s "$_ddos_tmp" ] && bash -n "$_ddos_tmp" 2>/dev/null; then
+        mkdir -p /usr/local/ddos
+        mv -f "$_ddos_tmp" /usr/local/ddos/ddos.sh
+        chmod 0755 /usr/local/ddos/ddos.sh
+        wget -q --timeout=20 -O /usr/local/ddos/ddos.conf http://www.inetbase.com/scripts/ddos/ddos.conf 2>/dev/null
+        wget -q --timeout=20 -O /usr/local/ddos/ignore.ip.list http://www.inetbase.com/scripts/ddos/ignore.ip.list 2>/dev/null
+        ln -sf /usr/local/ddos/ddos.sh /usr/local/sbin/ddos
+        /usr/local/ddos/ddos.sh --cron >/dev/null 2>&1 || true
+        echo -e "[ ${green}ok${NC} ] DOS-Deflate terpasang"
+    else
+        rm -f "$_ddos_tmp"
+        # Hanya bersihkan sisa yang TIDAK sah, jangan hapus yang berfungsi.
+        # Perlu cek -s terpisah: berkas kosong LOLOS "bash -n" karena tidak
+        # ada perintah yang bisa salah, jadi tanpa -s berkas kosong dianggap
+        # sah dan tidak pernah dibersihkan.
+        if [ -e /usr/local/ddos/ddos.sh ] && \
+           { [ ! -s /usr/local/ddos/ddos.sh ] || ! bash -n /usr/local/ddos/ddos.sh 2>/dev/null; }; then
+            rm -f /usr/local/ddos/ddos.sh /usr/local/sbin/ddos
+            rm -rf /usr/local/ddos
+        fi
+        echo -e "[ ${yell}WARN${NC} ] Sumber DOS-Deflate tidak tersedia (404)."
+        echo -e "[ ${yell}WARN${NC} ] Dilewati. fail2ban tetap aktif sebagai pelindung."
+    fi
+fi
 
 # banner /etc/issue.net
 sleep 1
@@ -410,8 +437,18 @@ echo -e "[ ${green}INFO$NC ] Settings banner"
 # (┌ ─ │ └), tanpa kode warna sama sekali.
 # Jangan tambahkan ANSI escape di issue.net walau terlihat lebih bagus
 # di terminal biasa.
-wget -q -O /etc/issue.net "https://raw.githubusercontent.com/Masbrow33/btr/main/issue.net"
-chmod +x /etc/issue.net
+# Banner ditulis lewat berkas sementara: issue.net yang kosong membuat
+# SSH tampil tanpa banner sama sekali. Bila unduhan gagal, banner lama
+# dipertahankan alih-alih dikosongkan.
+_banner_tmp=$(mktemp /tmp/issue.XXXXXX)
+if wget -q --timeout=25 --tries=2 -O "$_banner_tmp" "https://raw.githubusercontent.com/Masbrow33/btr/main/issue.net" \
+   && [ -s "$_banner_tmp" ]; then
+    mv -f "$_banner_tmp" /etc/issue.net
+    chmod 644 /etc/issue.net
+else
+    rm -f "$_banner_tmp"
+    echo -e "[ ${yell}WARN${NC} ] Gagal mengunduh banner, banner lama dipertahankan"
+fi
 
 # Jaring pengaman: kalau file dari repo ternyata mengandung ANSI/HTML,
 # bersihkan supaya banner tidak tampil berantakan.
