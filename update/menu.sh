@@ -99,10 +99,35 @@ IFACE=$(ip -o -4 route show default 2>/dev/null | awk '{print $5}' | head -1)
 
 tram=$(free -h | awk 'NR==2 {print $2}')
 uram=$(free -h | awk 'NR==2 {print $3}')
-ISP=$(curl -s --max-time 5 ipinfo.io/org 2>/dev/null | cut -d " " -f 2-10)
-CITY=$(curl -s --max-time 5 ipinfo.io/city 2>/dev/null)
-IPVPS=$(curl -s --max-time 5 ipinfo.io/ip 2>/dev/null)
-[ -z "$IPVPS" ] && IPVPS=$(ip -o -4 addr show "$IFACE" 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -1)
+
+# Geo dipakai dua kali per render. Tanpa cache, setiap menu memanggil
+# ipinfo 3x; setelah beberapa kali API membalas JSON error ({...}) dan
+# nilai berisi newline -> baris kotak pecah jadi "│ ISP & City : {" lalu "}│".
+# Cache 1 jam + bersihkan newline/kurung kurawal/tanda kutip.
+_geo() {
+    local url="$1" key="$2" cache="/run/yokkovpn-geo-$2" v="" age
+    if [ -f "$cache" ]; then
+        age=$(( $(date +%s) - $(stat -c %Y "$cache" 2>/dev/null || echo 0) ))
+        if [ "$age" -ge 0 ] && [ "$age" -lt 3600 ]; then
+            v=$(cat "$cache" 2>/dev/null)
+        fi
+    fi
+    if [ -z "$v" ]; then
+        v=$(curl -s --max-time 5 "$url" 2>/dev/null)
+        printf '%s' "$v" > "$cache" 2>/dev/null
+    fi
+    # Sanitasi SELALU (baik dari cache maupun API): buang newline, kurung
+    # kurawal, kutip, dan karakter kontrol; batasi panjang.
+    v=$(printf '%s' "$v" | tr -d '\r\n{}"' | tr -d '[:cntrl:]' | cut -c1-40)
+    case "$v" in
+        *error*|*Error*|*ERROR*|"") v="N/A" ;;
+    esac
+    printf '%s' "$v"
+}
+ISP=$(_geo https://ipinfo.io/org isp | sed 's/^AS[0-9]* //')
+CITY=$(_geo https://ipinfo.io/city city)
+IPVPS=$(_geo https://ipinfo.io/ip ip)
+[ -z "$IPVPS" ] || [ "$IPVPS" = "N/A" ] && IPVPS=$(ip -o -4 addr show "$IFACE" 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -1)
 [ -z "$ISP" ] && ISP="N/A"
 [ -z "$CITY" ] && CITY="N/A"
 DOMAIN=$(cat /etc/xray/domain 2>/dev/null)
