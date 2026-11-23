@@ -128,21 +128,42 @@ restore_shells() {
 
 remove_profile() {
     echo -e "${YELLOW}[4] Kembalikan /root/.profile${NC}"
-    if [ -f /root/.profile ]; then
-        if [ "$DRY" = "1" ]; then
-            echo -e "  ${CYAN}[dry]${NC} buang baris 'menu' dari /root/.profile"
-        else
-            grep -vE '^\s*(menu|clear)\s*$' /root/.profile > /tmp/.prof.$$ 2>/dev/null
-            mv /tmp/.prof.$$ /root/.profile
-            chmod 644 /root/.profile
-            ok "baris menu dihapus"
-        fi
+
+    if [ "$DRY" = "1" ]; then
+        echo -e "  ${CYAN}[dry]${NC} pulihkan /root/.profile dari /usr/share/base-files/dot.profile"
+        echo ""
+        return
+    fi
+
+    # Pakai file asli Ubuntu kalau ada, supaya benar-benar seperti droplet
+    # baru. Kalau tidak ada, buang baris menu dan blok if yang jadi kosong.
+    if [ -f /usr/share/base-files/dot.profile ]; then
+        cp -f /usr/share/base-files/dot.profile /root/.profile
+        chmod 644 /root/.profile
+        ok "/root/.profile dipulihkan dari paket base-files"
+    elif [ -f /root/.profile ]; then
+        grep -vE '^\s*(menu|clear)\s*$' /root/.profile \
+            | grep -vE '^\s*# (Menu hanya|Tanpa penjaga|#? ?lalu menggantung|#? ?\(gejalanya)' \
+            | awk '
+                # buang blok if yang isinya kosong
+                /if \[ -t 0 \]/ { hold = $0; next }
+                hold != "" {
+                    if ($0 ~ /^[[:space:]]*fi[[:space:]]*$/) { hold = ""; next }
+                    if ($0 ~ /^[[:space:]]*$/) { next }
+                    print hold; hold = ""
+                }
+                { print }
+              ' > /tmp/.prof.$$ 2>/dev/null
+        [ -s /tmp/.prof.$$ ] && mv /tmp/.prof.$$ /root/.profile
+        rm -f /tmp/.prof.$$
+        chmod 644 /root/.profile
+        ok "baris menu dan blok kosong dibersihkan"
     fi
     echo ""
 }
 
 remove_packages() {
-    echo -e "${YELLOW}[6] Hapus paket autoscript${NC}"
+    echo -e "${YELLOW}[7] Hapus paket autoscript${NC}"
     local pkgs="stunnel4 dropbear fail2ban squid vnstat openvpn easy-rsa
         badvpn xl2tpd pptpd libpam0g-dev libcap-ng-dev"
     local list=""
@@ -163,7 +184,7 @@ remove_packages() {
 }
 
 remove_users() {
-    echo -e "${YELLOW}[7] Hapus user autoscript${NC}"
+    echo -e "${YELLOW}[8] Hapus user autoscript${NC}"
     local n=0
     for u in xray vnstat proxy; do
         if id "$u" >/dev/null 2>&1; then
@@ -176,8 +197,88 @@ remove_users() {
     echo ""
 }
 
+restore_ssh() {
+    echo -e "${YELLOW}[5] Kembalikan SSH ke setelan default${NC}"
+
+    local cfg=/etc/ssh/sshd_config
+    local bak="/root/sshd_config.bak-uninstall-$(date +%Y%m%d-%H%M%S)"
+
+    if [ ! -f "$cfg" ]; then
+        warn "sshd_config tidak ada, dilewati"
+        echo ""
+        return
+    fi
+
+    if [ "$DRY" = "1" ]; then
+        echo -e "  ${CYAN}[dry]${NC} backup $cfg -> $bak"
+        echo -e "  ${CYAN}[dry]${NC} hapus Port tambahan (200, 2269, 3369, 40000, 500, 51443, 58080)"
+        echo -e "  ${CYAN}[dry]${NC} hapus Banner /etc/issue.net"
+        echo -e "  ${CYAN}[dry]${NC} hapus MaxStartups / MaxSessions / LoginGraceTime / GSSAPIAuthentication / UseDNS"
+        echo -e "  ${CYAN}[dry]${NC} pastikan 'Port 22' ada, lalu sshd -t dan reload"
+        echo -e "  ${CYAN}[dry]${NC} hapus /etc/issue.net"
+        echo -e "  ${CYAN}[dry]${NC} dropbear: NO_START=1, port 22, tanpa extra args"
+        echo ""
+        return
+    fi
+
+    cp -a "$cfg" "$bak" 2>/dev/null
+    say "  backup: $bak"
+
+    # Buang baris yang ditambahkan autoscript. Port 22 dipertahankan.
+    awk '
+        /^[[:space:]]*Port[[:space:]]+/ {
+            if ($2 == 22) { print "Port 22"; seen22 = 1 }
+            next
+        }
+        /^[[:space:]]*Banner[[:space:]]+/            { next }
+        /^[[:space:]]*MaxStartups[[:space:]]+/       { next }
+        /^[[:space:]]*MaxSessions[[:space:]]+/       { next }
+        /^[[:space:]]*LoginGraceTime[[:space:]]+/    { next }
+        /^[[:space:]]*GSSAPIAuthentication[[:space:]]+/ { next }
+        /^[[:space:]]*UseDNS[[:space:]]+/            { next }
+        { print }
+        END { if (!seen22) print "Port 22" }
+    ' "$bak" > "$cfg"
+
+    # sshd -t wajib lolos. Kalau gagal, kembalikan backup supaya akses
+    # tidak hilang gara-gara salah edit.
+    if ! sshd -t 2>/dev/null; then
+        cp -a "$bak" "$cfg"
+        warn "sshd -t GAGAL, sshd_config dikembalikan ke semula"
+        echo ""
+        return
+    fi
+    ok "sshd_config valid"
+
+    # reload, bukan restart: sesi SSH yang sedang aktif tidak terputus
+    run "systemctl reload ssh 2>/dev/null || systemctl reload sshd 2>/dev/null || service ssh reload 2>/dev/null"
+    say "  ssh di-reload (sesi aktif tetap tersambung)"
+
+    # banner autoscript
+    if [ -f /etc/issue.net ]; then
+        run "rm -f /etc/issue.net"
+        say "  /etc/issue.net dihapus"
+    fi
+
+    # dropbear: kembalikan ke kondisi nonaktif seperti droplet baru
+    if [ -f /etc/default/dropbear ]; then
+        sed -i 's/^NO_START=.*/NO_START=1/' /etc/default/dropbear 2>/dev/null
+        sed -i 's/^DROPBEAR_PORT=.*/DROPBEAR_PORT=22/' /etc/default/dropbear 2>/dev/null
+        sed -i 's/^DROPBEAR_EXTRA_ARGS=.*/DROPBEAR_EXTRA_ARGS=""/' /etc/default/dropbear 2>/dev/null
+        say "  dropbear: NO_START=1, port 22, tanpa extra args"
+    fi
+
+    # socket activation Ubuntu 24.04: pastikan ssh.socket kembali ke default
+    if systemctl is-enabled ssh.socket >/dev/null 2>&1; then
+        run "systemctl disable ssh.socket 2>/dev/null"
+        say "  ssh.socket dinonaktifkan (kembali ke ssh.service)"
+    fi
+
+    echo ""
+}
+
 remove_nginx() {
-    echo -e "${YELLOW}[5] Bersihkan konfigurasi nginx${NC}"
+    echo -e "${YELLOW}[6] Bersihkan konfigurasi nginx${NC}"
     for f in /etc/nginx/conf.d/xray.conf /etc/nginx/conf.d/vps.conf \
              /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default; do
         [ -e "$f" ] || continue
@@ -191,7 +292,7 @@ remove_nginx() {
 }
 
 remove_firewall() {
-    echo -e "${YELLOW}[8] Bersihkan aturan iptables autoscript${NC}"
+    echo -e "${YELLOW}[9] Bersihkan aturan iptables autoscript${NC}"
     if [ "$DRY" = "1" ]; then
         echo -e "  ${CYAN}[dry]${NC} flush aturan autoscript"
     else
@@ -212,7 +313,8 @@ summary() {
     echo -e "    ${CYAN}wget -O setup.sh https://raw.githubusercontent.com/Masbrow33/btr/main/setup.sh${NC}"
     echo -e "    ${CYAN}chmod +x setup.sh && ./setup.sh${NC}"
     echo ""
-    echo "  Catatan: SSH tidak disentuh, jadi koneksi Anda tetap aman."
+    echo "  SSH dikembalikan ke setelan default (Port 22, tanpa banner)."
+    echo "  Koneksi yang sedang aktif tidak terputus karena hanya reload."
     echo ""
 }
 
@@ -227,6 +329,7 @@ case "$MODE" in
         remove_files
         restore_shells
         remove_profile
+        restore_ssh
         remove_nginx
         remove_packages
         remove_users
@@ -241,6 +344,7 @@ case "$MODE" in
         remove_files
         restore_shells
         remove_profile
+        restore_ssh
         remove_nginx
         summary
         ;;
