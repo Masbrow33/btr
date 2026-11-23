@@ -1,4 +1,8 @@
 #!/bin/bash
+# renderer kotak bersama — satu sumber untuk semua menu.
+# _vlen di library menghitung KARAKTER (wc -m), bukan byte, supaya
+# karakter • dan │ tidak dianggap 3 kolom.
+[ -f /usr/local/lib/vpsbox.sh ] && . /usr/local/lib/vpsbox.sh && vpsbox_init
 dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
 biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
 ###########- COLOR CODE -##############
@@ -16,57 +20,6 @@ red='\e[1;31m'
 green='\e[1;32m'
 NC='\e[0m'
 
-# ===== helper render kotak (lebar dalam 49) =====
-W=49
-_vlen() { printf '%s' "$1" | sed 's/\x1b\[[0-9;]*m//g; s/\\e\[[0-9;]*m//g' | awk '{print length}'; }
-_dashes() { printf '─%.0s' $(seq 1 $1); }
-_box_top() { printf '%s┌%s┐%s\n' "$COLOR1" "$(_dashes $W)" "$NC"; }
-_box_bot() { printf '%s└%s┘%s\n' "$COLOR1" "$(_dashes $W)" "$NC"; }
-_box_mid() { printf '%s├%s┤%s\n' "$COLOR1" "$(_dashes $W)" "$NC"; }
-_bline() {
-    local t="$1" w pad
-    w=$(_vlen "$t"); pad=$(( W - 1 - w )); [ "$pad" -lt 0 ] && pad=0
-    printf '%s│%s %s' "$COLOR1" "$NC" "$t"; printf '%*s' "$pad" ''
-    printf '%s│%s\n' "$COLOR1" "$NC"
-}
-_bcenter() {
-    local t="$1" w l r
-    w=$(_vlen "$t")
-    l=$(( (W - w) / 2 )); [ "$l" -lt 0 ] && l=0
-    r=$(( W - w - l ));    [ "$r" -lt 0 ] && r=0
-    printf '%s│%s' "$COLOR1" "$NC"; printf '%*s' "$l" ''; printf '%s' "$t"
-    printf '%*s' "$r" ''; printf '%s│%s\n' "$COLOR1" "$NC"
-}
-_bstat() {
-    local lbl="$1" val="$2" wl wv gap
-    wl=$(_vlen "  • $lbl"); wv=$(_vlen "$val")
-    gap=$(( W - 2 - wl - wv )); [ "$gap" -lt 1 ] && gap=1
-    printf '%s│%s  • %s' "$COLOR1" "$NC" "$lbl"
-    printf '%*s' "$gap" ''; printf '%s %s│%s\n' "$val" "$COLOR1" "$NC"
-}
-_bmenu2() {
-    local n1="$1" l1="$2" n2="$3" l2="$4"
-    local left right wl wr gap
-    left="${COLOR1}[${n1}]${NC} $(printf '%-16s' "$l1")"
-    right="${COLOR1}[${n2}]${NC} ${l2}"
-    wl=$(_vlen "$left"); wr=$(_vlen "$right")
-    gap=$(( W - 2 - wl - wr )); [ "$gap" -lt 1 ] && gap=1
-    printf '%s│%s %s' "$COLOR1" "$NC" "$left"; printf '%*s' "$gap" ''
-    printf '%s %s│%s\n' "$right" "$COLOR1" "$NC"
-}
-_bmenu1() {
-    local n="$1" l="$2" left wl pad
-    left="${COLOR1}[${n}]${NC} ${l}"
-    wl=$(_vlen "$left"); pad=$(( W - 1 - wl )); [ "$pad" -lt 0 ] && pad=0
-    printf '%s│%s %s' "$COLOR1" "$NC" "$left"; printf '%*s' "$pad" ''
-    printf '%s│%s\n' "$COLOR1" "$NC"
-}
-_byline() {
-    printf '%s┌%s BY %s┐%s\n' "$COLOR1" "$(_dashes 22)" "$(_dashes 23)" "$NC"
-    _bcenter "${GREEN}• EKO BELLICK PREMIUM •${NC}"
-    _box_bot
-}
-# ===== end helper =====
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 COLOR1=$(printf '%b' "$COLOR1")
@@ -77,6 +30,7 @@ red=$(printf '%b' "$red")
 green=$(printf '%b' "$green")
 GREEN=$(printf '%b' "$GREEN")
 YELLOW=$(printf '%b' "$YELLOW")
+vpsbox_init
 
 
 function status(){
@@ -296,7 +250,7 @@ _box_bot
 _box_top
 _bmenu2 "01" "RUNNING"        "06" "TCP TWEAK"
 _bmenu2 "02" "SET BANNER"     "07" "RESTART ALL"
-_bmenu2 "03" "BANDWITH USAGE" "08" "AUTO REBOOT"
+_bmenu2 "03" "BANDWIDTH USAGE" "08" "AUTO REBOOT"
 _bmenu2 "04" "ANTI TORRENT"   "09" "SPEEDTEST"
 _bmenu1 "05" "SET WAKTU REBOOT"
 _box_mid

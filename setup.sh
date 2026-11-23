@@ -373,7 +373,23 @@ EOF
 cat <<EOF> /etc/yokkovpn/theme/color.conf
 blue
 EOF
-    
+
+# --- rapikan tema dari instalasi lama ---
+# Versi lama menulis file tema dengan >> sehingga isinya menumpuk
+# (BG/TEXT berulang) dan color.conf bisa berisi beberapa baris.
+# Akibatnya nama file tema jadi tidak valid, COLOR1 kosong, warna
+# hilang, dan kotak menu tidak lurus. Dirapikan tiap kali install.
+for _tf in /etc/yokkovpn/theme/*; do
+    [ -f "$_tf" ] || continue
+    case "$_tf" in */color.conf) continue ;; esac
+    _uniq="$(awk 'NF && !seen[$0]++' "$_tf" 2>/dev/null)"
+    [ -n "$_uniq" ] && printf '%s\n' "$_uniq" > "$_tf"
+done
+_cnow="$(head -1 /etc/yokkovpn/theme/color.conf 2>/dev/null | tr -d ' \r\n')"
+[ -f "/etc/yokkovpn/theme/$_cnow" ] || _cnow=green
+printf '%s\n' "$_cnow" > /etc/yokkovpn/theme/color.conf
+unset _tf _uniq _cnow
+
 #install ssh ovpn
 echo -e "$green[INFO]$NC Install SSH & OpenVPN!"
 sleep 2

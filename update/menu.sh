@@ -27,13 +27,21 @@ W=49                      # lebar dalam kotak
 BOX_T="${COLOR1}┌$(printf '─%.0s' $(seq 1 $W))┐${NC}"
 BOX_B="${COLOR1}└$(printf '─%.0s' $(seq 1 $W))┘${NC}"
 
-# hitung lebar tampak (tanpa kode warna)
-_vlen() { printf '%s' "$1" | sed $'s/\033\\[[0-9;]*m//g' | awk '{print length}'; }
+# hitung lebar tampak (tanpa kode warna) — KARAKTER, bukan byte.
+# awk length menghitung byte, sehingga "•" (3 byte) dianggap 3 kolom
+# dan padding meleset 2 kolom per karakter.
+_vlen() { printf '%s' "$1" | sed $'s/\033\\[[0-9;]*m//g' | tr -d '\n' | wc -m | tr -d ' '; }
 
 # baris isi rata kiri:  │ <isi><padding> │
 bline() {
-    local t="$1" w pad
+    local t="$1" w pad max
+    max=$(( W - 1 ))
     w=$(_vlen "$t")
+    # potong teks yang melebihi lebar kotak, kalau tidak dinding kanan meluber
+    if [ "$w" -gt "$max" ]; then
+        t=$(printf '%s' "$t" | sed $'s/\033\\[[0-9;]*m//g' | cut -c1-"$max")
+        w=$(_vlen "$t")
+    fi
     pad=$(( W - 1 - w ))
     [ "$pad" -lt 0 ] && pad=0
     printf '%s│%s %s' "$COLOR1" "$NC" "$t"
