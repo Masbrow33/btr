@@ -189,7 +189,7 @@ fi
 
 # // Validate Successfull
 echo ""
-printf '  Tekan %sENTER%s untuk mulai instalasi... ' "${GREEN}" "${NC}"
+printf '  Tekan \033[0;32mENTER\033[0m untuk mulai instalasi... '
 read -r
 echo ""
 
@@ -563,9 +563,9 @@ echo "------------------------------------------------------------"
 echo -e "\033[1;32m[ SELESAI ]\033[0m Instalasi selesai."
 echo ""
 echo "  VPS perlu di-reboot supaya semua layanan berjalan normal."
-echo "  Tekan \033[1;32mENTER\033[0m untuk reboot sekarang,"
+printf '  Tekan \033[1;32mENTER\033[0m untuk reboot sekarang,\n'
 echo "  atau tunggu 60 detik (reboot otomatis)."
-echo "  Tekan \033[1;33mN\033[0m lalu ENTER untuk reboot manual nanti."
+printf '  Tekan \033[1;33mN\033[0m lalu ENTER untuk reboot manual nanti.\n'
 echo ""
 read -t 60 -r -p "  Pilihan [ENTER/n] : " _reb
 case "${_reb:-}" in
@@ -577,7 +577,7 @@ case "${_reb:-}" in
         ;;
     *)
         echo ""
-        echo -e "\033[1;32m[ INFO ]\033[0m Rebooting..."
+        printf '\033[1;32m[ INFO ]\033[0m Rebooting...\n'
         sleep 2
         reboot
         ;;
