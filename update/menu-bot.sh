@@ -76,11 +76,30 @@ EOF
 
 fun_bot1() {
 clear
-if [[ ! -x /usr/bin/bbt ]]; then
-    wget -q --no-check-certificate -O /usr/bin/bbt "https://raw.githubusercontent.com/Masbrow33/dxavier/main/bot_panel/BotAPI.sh" 2>/dev/null
-    chmod +x /usr/bin/bbt
-    mkdir -p /etc/.maAsiss 2>/dev/null
-    touch /etc/.maAsiss/.Shellbtsss 2>/dev/null
+# Unduh hanya bila bbt belum ada ATAU isinya tidak sah. Versi lama memakai
+# [[ ! -x /usr/bin/bbt ]] sebagai penjaga; karena chmod +x dijalankan tanpa
+# syarat, berkas kosong hasil unduhan yang gagal langsung dianggap
+# "terpasang" dan tidak pernah diunduh ulang — bot mati permanen.
+if [ ! -s /usr/bin/bbt ] || ! python3 -m py_compile /usr/bin/bbt 2>/dev/null; then
+    _bbt_tmp=$(mktemp /tmp/bbt.XXXXXX)
+    if wget -q --no-check-certificate --timeout=25 --tries=2 -O "$_bbt_tmp" \
+        "https://raw.githubusercontent.com/Masbrow33/dxavier/main/bot_panel/BotAPI.sh" \
+        && [ -s "$_bbt_tmp" ] && python3 -m py_compile "$_bbt_tmp" 2>/dev/null; then
+        mv -f "$_bbt_tmp" /usr/bin/bbt
+        chmod +x /usr/bin/bbt
+        mkdir -p /etc/.maAsiss 2>/dev/null
+        touch /etc/.maAsiss/.Shellbtsss 2>/dev/null
+    else
+        rm -f "$_bbt_tmp"
+        echo -e "$COLOR1━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$NC"
+        echo -e " [WARN] Gagal mengunduh bot panel. Periksa koneksi lalu coba lagi."
+        echo -e "$COLOR1━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$NC"
+        echo ""
+        printf ' Press any key to back on menu'
+        read -rn 1 -s
+        menu-bot
+        return
+    fi
 fi
 [[ "$(grep -wc "sam_bot" "/etc/rc.local" 2>/dev/null)" = '0' ]] && {
     [ -f /etc/rc.local ] || printf '#!/bin/sh -e\nexit 0\n' > /etc/rc.local
