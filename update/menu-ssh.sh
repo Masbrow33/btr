@@ -114,7 +114,7 @@ _bline "SSL/TLS    :$ssl"
 _bline "UDPGW      : 7100-7300"
 _box_bot
 _box_top
-echo -e "  GET wss://$domen/ HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
+echo -e "  GET wss://$domen/ssh-ws HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
 _box_bot
 _byline
 else
@@ -137,7 +137,7 @@ _bline "SSL/TLS    :$ssl"
 _bline "UDPGW      : 7100-7300"
 _box_bot
 _box_top
-echo -e "  GET wss://$domen/ HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
+echo -e "  GET wss://$domen/ssh-ws HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
 _box_bot
 _byline
 fi
@@ -486,7 +486,7 @@ _bline "SSL/TLS    :$ssl"
 _bline "UDPGW      : 7100-7300"
 _box_bot
 _box_top
-echo -e "  GET wss://$domen/ HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
+echo -e "  GET wss://$domen/ssh-ws HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
 _box_bot
 _byline
 
