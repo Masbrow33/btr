@@ -501,7 +501,14 @@ echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
 # Swap: VPS 1 GB RAM kehabisan memori saat banyak service jalan
 # (xray + squid + nginx + stunnel + python WS). Tanpa swap sistem
 # bisa macet total. Tambah 2 GB bila belum ada.
-if ! swapon --show 2>/dev/null | grep -q .; then
+#
+# PENTING: jangan cek "ada swap apa saja". Armbian/TV-box dan beberapa
+# image VPS sudah memasang zram sebagai swap (TYPE=partition), sehingga
+# `swapon --show` tidak kosong dan blok ini dilewati — padahal zram
+# memakai RAM, bukan disk, jadi tidak menambah headroom sama sekali.
+# Uji keberadaan swap berjenis FILE, bukan sekadar "ada swap".
+_swapfile_ada=$(swapon --show=NAME,TYPE --noheadings 2>/dev/null | awk '$2=="file"{print "ya"; exit}')
+if [ -z "$_swapfile_ada" ]; then
     fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none
     chmod 600 /swapfile
     mkswap /swapfile >/dev/null 2>&1

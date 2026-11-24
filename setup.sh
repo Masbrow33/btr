@@ -518,11 +518,11 @@ echo ""
 echo "------------------------------------------------------------"
 echo ""  | tee -a log-install.txt
 echo "   >>> Service & Port"  | tee -a log-install.txt
-echo "   - OpenSSH                 : 22"  | tee -a log-install.txt
+echo "   - OpenSSH                 : 22,200,500,40000,51443,58080"  | tee -a log-install.txt
 echo "   - SSH Websocket           : 80 [ON]" | tee -a log-install.txt
 echo "   - SSH SSL Websocket       : 443" | tee -a log-install.txt
-echo "   - Stunnel4                : 447, 777" | tee -a log-install.txt
-echo "   - Dropbear                : 109, 143" | tee -a log-install.txt
+echo "   - Stunnel4                : 222, 777, 2096" | tee -a log-install.txt
+echo "   - Dropbear                : 69, 109, 110, 143, 50000" | tee -a log-install.txt
 echo "   - Badvpn                  : 7100-7900" | tee -a log-install.txt
 echo "   - Nginx                   : 81" | tee -a log-install.txt
 echo "   - XRAY  Vmess TLS         : 443" | tee -a log-install.txt
