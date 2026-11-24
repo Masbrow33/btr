@@ -164,7 +164,17 @@ portsshws=`cat ~/log-install.txt | grep -w "SSH Websocket" | cut -d: -f2 | awk '
 if [ -f "/etc/systemd/system/sshws.service" ]; then
 clear
 else
-wget -q -O /usr/bin/proxy3.js "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/proxy3.js"
+# Unduh aman: berkas kosong hasil unduhan gagal akan membuat
+# ssh-wsenabler tidak bisa dijalankan sebagai ExecStart service.
+_wsen_tmp=$(mktemp /tmp/wsen.XXXXXX)
+if wget -q --timeout=25 --tries=2 -O "$_wsen_tmp" \
+     "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/proxy3.js" \
+   && [ -s "$_wsen_tmp" ]; then
+    mv -f "$_wsen_tmp" /usr/bin/proxy3.js
+else
+    rm -f "$_wsen_tmp"
+    _bline "[WARN] proxy3.js gagal diunduh"
+fi
 cat <<EOF > /etc/systemd/system/sshws.service
 [Unit]
 Description=WSenabler
@@ -189,7 +199,23 @@ _box_top
 _bcenter "• WEBSOCKET MENU •"
 _box_bot
 _box_top
-wget -q -O /usr/bin/ssh-wsenabler "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/sshws-true.sh" && chmod +x /usr/bin/ssh-wsenabler
+# Unduh hanya bila belum ada atau isinya tidak sah. Versi lama mengunduh
+# ulang setiap kali menu Start ditekan, dan "&& chmod +x" membuat berkas
+# kosong hasil unduhan gagal tetap menjadi executable — service lalu
+# gagal start tanpa pesan yang jelas.
+if [ ! -s /usr/bin/ssh-wsenabler ] || ! bash -n /usr/bin/ssh-wsenabler 2>/dev/null; then
+    _wsx_tmp=$(mktemp /tmp/wsx.XXXXXX)
+    if wget -q --timeout=25 --tries=2 -O "$_wsx_tmp" \
+         "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/sshws-true.sh" \
+       && [ -s "$_wsx_tmp" ] && bash -n "$_wsx_tmp" 2>/dev/null; then
+        mv -f "$_wsx_tmp" /usr/bin/ssh-wsenabler
+        chmod +x /usr/bin/ssh-wsenabler
+    else
+        rm -f "$_wsx_tmp"
+        rm -f /usr/bin/ssh-wsenabler
+        _bline "[WARN] ssh-wsenabler gagal dipasang"
+    fi
+fi
 systemctl daemon-reload >/dev/null 2>&1
 systemctl enable sshws.service >/dev/null 2>&1
 systemctl start sshws.service >/dev/null 2>&1
