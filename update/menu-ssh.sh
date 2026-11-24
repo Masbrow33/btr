@@ -90,6 +90,15 @@ IP=$(curl -sS ifconfig.me);
 ossl=`cat /root/log-install.txt | grep -w "OpenVPN" | cut -f2 -d: | awk '{print $6}'`
 opensh=`cat /root/log-install.txt | grep -w "OpenSSH" | cut -f2 -d: | sed 's/^ *//'`
 db=`cat /root/log-install.txt | grep -w "Dropbear" | cut -f2 -d: | sed 's/^ *//'`
+# UDPGW: tampilkan hanya kalau benar-benar ada yang mendengarkan. Versi
+# lama menulis "7100-7300" secara hardcode — salah rentang (yang dipakai
+# 7100-7900) dan tetap tampil walau badvpn tidak bisa jalan di arsitektur
+# ini (binary x86-64 di mesin ARM).
+if [ "$(ss -lun 2>/dev/null | awk '{print $4}' | grep -cE ':(7100|7200|7300|7400|7500|7600|7700|7800|7900)$')" -ge 9 ]; then
+    _udpgw="7100-7900"
+else
+    _udpgw="[OFF]"
+fi
 ssl="$(cat ~/log-install.txt | grep -w "Stunnel4" | cut -d: -f2)"
 sqd="$(cat ~/log-install.txt | grep -w "Squid" | cut -d: -f2)"
 ovpn="$(netstat -nlpt | grep -i openvpn | grep -i 0.0.0.0 | awk '{print $4}' | cut -d: -f2)"
@@ -123,7 +132,7 @@ _bline "Dropbear   : $db"
 _bline "SSH-WS     : $portsshws"
 _bline "SSH-SSL-WS : $wsssl"
 _bline "SSL/TLS    :$ssl"
-_bline "UDPGW      : 7100-7300"
+_bline "UDPGW      : $_udpgw"
 _box_bot
 _box_top
 echo -e "  GET wss://$domen/ssh-ws HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
@@ -146,7 +155,7 @@ _bline "Dropbear   : $db"
 _bline "SSH-WS     : $portsshws"
 _bline "SSH-SSL-WS : $wsssl"
 _bline "SSL/TLS    :$ssl"
-_bline "UDPGW      : 7100-7300"
+_bline "UDPGW      : $_udpgw"
 _box_bot
 _box_top
 echo -e "  GET wss://$domen/ssh-ws HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
@@ -486,6 +495,15 @@ IP=$(curl -sS ifconfig.me);
 ossl=`cat /root/log-install.txt | grep -w "OpenVPN" | cut -f2 -d: | awk '{print $6}'`
 opensh=`cat /root/log-install.txt | grep -w "OpenSSH" | cut -f2 -d: | sed 's/^ *//'`
 db=`cat /root/log-install.txt | grep -w "Dropbear" | cut -f2 -d: | sed 's/^ *//'`
+# UDPGW: tampilkan hanya kalau benar-benar ada yang mendengarkan. Versi
+# lama menulis "7100-7300" secara hardcode — salah rentang (yang dipakai
+# 7100-7900) dan tetap tampil walau badvpn tidak bisa jalan di arsitektur
+# ini (binary x86-64 di mesin ARM).
+if [ "$(ss -lun 2>/dev/null | awk '{print $4}' | grep -cE ':(7100|7200|7300|7400|7500|7600|7700|7800|7900)$')" -ge 9 ]; then
+    _udpgw="7100-7900"
+else
+    _udpgw="[OFF]"
+fi
 ssl="$(cat ~/log-install.txt | grep -w "Stunnel4" | cut -d: -f2)"
 OhpSSH=`cat /root/log-install.txt | grep -w "OHP SSH" | cut -d: -f2 | awk '{print $1}'`
 
@@ -521,7 +539,7 @@ _bline "Dropbear   : $db"
 _bline "SSH-WS     : $portsshws"
 _bline "SSH-SSL-WS : $wsssl"
 _bline "SSL/TLS    :$ssl"
-_bline "UDPGW      : 7100-7300"
+_bline "UDPGW      : $_udpgw"
 _box_bot
 _box_top
 echo -e "  GET wss://$domen/ssh-ws HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"
@@ -546,7 +564,7 @@ _bline "Dropbear   : $db"
 _bline "SSH-WS     : $portsshws"
 _bline "SSH-SSL-WS : $wsssl"
 _bline "SSL/TLS    :$ssl"
-_bline "UDPGW      : 7100-7300"
+_bline "UDPGW      : $_udpgw"
 _box_bot
 _box_top
 _bline "GET wss://$domen/ HTTP/1.1[crlf]Host: $domen [crlf]Upgrade: websocket[crlf][crlf]"

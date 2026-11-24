@@ -523,7 +523,12 @@ echo "   - SSH Websocket           : 80 [ON]" | tee -a log-install.txt
 echo "   - SSH SSL Websocket       : 443" | tee -a log-install.txt
 echo "   - Stunnel4                : 222, 777, 2096" | tee -a log-install.txt
 echo "   - Dropbear                : 69, 109, 110, 143, 50000" | tee -a log-install.txt
+_bv_port=$(ss -lun 2>/dev/null | awk '{print $4}' | grep -cE ':(7100|7200|7300|7400|7500|7600|7700|7800|7900)$')
+if [ "${_bv_port:-0}" -ge 9 ]; then
 echo "   - Badvpn                  : 7100-7900" | tee -a log-install.txt
+else
+echo "   - Badvpn                  : [OFF] tidak tersedia untuk $(uname -m)" | tee -a log-install.txt
+fi
 echo "   - Nginx                   : 81" | tee -a log-install.txt
 echo "   - XRAY  Vmess TLS         : 443" | tee -a log-install.txt
 echo "   - XRAY  Vmess None TLS    : 80" | tee -a log-install.txt

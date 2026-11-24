@@ -189,16 +189,41 @@ mkdir -p /home/vps/public_html/clash-ws
 cd
 # Unduh ke berkas sementara: badvpn-udpgw yang kosong akan membuat semua
 # sesi screen langsung mati tanpa pesan yang jelas.
+#
+# Cek arsitektur SEBELUM memasang. Binary di repo hanya x86-64; di mesin
+# aarch64 (STB Amlogic, VPS ARM) pemasangan tetap "berhasil" tapi setiap
+# `screen -dmS badvpn ...` langsung mati dengan "Exec format error" —
+# dan karena screen berjalan detached, pesan itu tidak pernah terlihat.
+# Akibatnya 9 port UDPGW (7100-7900) tercantum di log-install.txt padahal
+# tidak ada satu pun yang mendengarkan.
+_bv_ok=0
 _bv_tmp=$(mktemp /tmp/badvpn.XXXXXX)
 if wget -q --timeout=25 --tries=2 -O "$_bv_tmp" "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/newudpgw" \
    && [ -s "$_bv_tmp" ]; then
-    mv -f "$_bv_tmp" /usr/bin/badvpn-udpgw
-    chmod +x /usr/bin/badvpn-udpgw
+    _bv_arch=$(od -An -tx1 -j18 -N2 "$_bv_tmp" 2>/dev/null | tr -d ' \n')
+    _bv_mesin=$(uname -m)
+    case "$_bv_mesin" in
+        x86_64|amd64)  _bv_butuh="3e00" ;;
+        aarch64|arm64) _bv_butuh="b700" ;;
+        *)             _bv_butuh="?"    ;;
+    esac
+    if [ "$_bv_arch" = "$_bv_butuh" ]; then
+        mv -f "$_bv_tmp" /usr/bin/badvpn-udpgw
+        chmod +x /usr/bin/badvpn-udpgw
+        _bv_ok=1
+    else
+        rm -f "$_bv_tmp"
+        echo -e "[ ${yell}WARN${NC} ] badvpn-udpgw tidak cocok untuk $_bv_mesin (binary: $_bv_arch)."
+        echo -e "[ ${yell}WARN${NC} ]   Port UDPGW 7100-7900 DILEWATI — tidak ada proses yatim."
+        echo -e "[ ${yell}WARN${NC} ]   SSH/WS/Xray tetap berfungsi normal."
+        rm -f /usr/bin/badvpn-udpgw
+    fi
 else
     rm -f "$_bv_tmp"
     echo -e "[ ${yell}WARN${NC} ] badvpn-udpgw gagal diunduh, port UDPGW dilewati"
 fi
 
+if [ "$_bv_ok" -eq 1 ]; then
 # rc.local: tulis SEMUA port yang dijalankan. Versi lama hanya menulis
 # 7100/7200/7300 padahal screen menjalankan 7100-7900, sehingga setelah
 # reboot enam port badvpn tidak pernah hidup lagi. Ditulis ulang
@@ -219,6 +244,15 @@ done
 for _bp in 7100 7200 7300 7400 7500 7600 7700 7800 7900; do
     screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:${_bp} --max-clients 500
 done
+sleep 2
+# Buktikan benar-benar hidup; jangan percaya bahwa screen sudah jalan.
+_bv_hidup=$(ss -lun 2>/dev/null | awk '{print $4}' | grep -cE ':(7100|7200|7300|7400|7500|7600|7700|7800|7900)$')
+if [ "${_bv_hidup:-0}" -ge 9 ]; then
+    echo -e "[ ${green}ok${NC} ] badvpn-udpgw aktif di 9 port (7100-7900)"
+else
+    echo -e "[ ${yell}WARN${NC} ] badvpn-udpgw hanya ${_bv_hidup:-0}/9 port aktif"
+fi
+fi
 
 # setting port ssh
 cd
@@ -509,14 +543,40 @@ echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config
 # Uji keberadaan swap berjenis FILE, bukan sekadar "ada swap".
 _swapfile_ada=$(swapon --show=NAME,TYPE --noheadings 2>/dev/null | awk '$2=="file"{print "ya"; exit}')
 if [ -z "$_swapfile_ada" ]; then
-    fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none
+    # fallocate cepat tapi bisa menghasilkan berkas yang tidak bisa dipakai
+    # swapon di beberapa filesystem (overlayfs, btrfs tanpa NOCOW, sebagian
+    # volume cloud). Jangan percaya hasilnya: uji dengan swapon, lalu ulangi
+    # memakai dd yang menulis blok sungguhan.
+    if ! fallocate -l 2G /swapfile 2>/dev/null; then
+        dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none 2>/dev/null
+    fi
     chmod 600 /swapfile
     mkswap /swapfile >/dev/null 2>&1
-    swapon /swapfile
-    grep -q "^/swapfile" /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
-    sysctl -w vm.swappiness=20 >/dev/null 2>&1
-    grep -q "^vm.swappiness" /etc/sysctl.conf || echo 'vm.swappiness=20' >> /etc/sysctl.conf
-    echo -e "[ ${green}ok${NC} ] Swap 2 GB ditambahkan"
+
+    if ! swapon /swapfile 2>/dev/null; then
+        # Percobaan kedua: berkas teralokasi penuh (bukan extent kosong).
+        swapoff /swapfile >/dev/null 2>&1 || true
+        dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none 2>/dev/null
+        chmod 600 /swapfile
+        mkswap /swapfile >/dev/null 2>&1
+        swapon /swapfile 2>/dev/null || true
+    fi
+
+    # Verifikasi: hanya catat ke fstab dan akui berhasil kalau swap benar
+    # aktif. Tanpa ini, filesystem yang tidak mendukung swapfile membuat
+    # skrip mencetak "ok" padahal tidak ada swap sama sekali.
+    if swapon --show=NAME --noheadings 2>/dev/null | grep -qx '/swapfile'; then
+        grep -q "^/swapfile" /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+        sysctl -w vm.swappiness=20 >/dev/null 2>&1
+        grep -q "^vm.swappiness" /etc/sysctl.conf || echo 'vm.swappiness=20' >> /etc/sysctl.conf
+        echo -e "[ ${green}ok${NC} ] Swap 2 GB ditambahkan"
+    else
+        # Jangan tinggalkan /swapfile 2 GB yang tidak terpakai dan jangan
+        # tulis ke fstab: keduanya hanya menambah kebingungan saat reboot.
+        rm -f /swapfile
+        echo -e "[ ${yell}WARN${NC} ] Swapfile tidak bisa diaktifkan di filesystem ini."
+        echo -e "[ ${yell}WARN${NC} ]   Sistem tetap berjalan; pantau RAM agar tidak penuh."
+    fi
 fi
 
 # download script
@@ -705,15 +765,10 @@ else
     echo -e "[ ${yellow}WARN${NC} ] Squid tidak terpasang (paket 'squid' tidak tersedia)"
 fi
 
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7100 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7200 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7300 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7400 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7500 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7600 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7700 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7800 --max-clients 500
-screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7900 --max-clients 500
+# badvpn TIDAK dijalankan lagi di sini. Versi lama memanggil 9 `screen`
+# untuk kedua kalinya di akhir script — sesi pertama sudah jalan, jadi
+# yang kedua hanya menambah 9 percobaan gagal (port sudah dipakai).
+# Satu blok di atas sudah cukup dan sudah diverifikasi dengan ss.
 history -c
 # Idempoten: jangan tambah baris berulang di /etc/profile.
 grep -qxF 'unset HISTFILE' /etc/profile 2>/dev/null || echo "unset HISTFILE" >> /etc/profile
