@@ -514,11 +514,49 @@ fi
 
 # download script
 cd /usr/bin
-wget -q -O speedtest "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/speedtest_cli.py"
+
+# speedtest: berkas di repo bernama speedtest_cli.py tetapi isinya BINARY
+# ELF x86-64, bukan skrip Python. Di VPS x86-64 berjalan, di ARM (STB
+# Amlogic, CasaOS) gagal dengan "cannot execute binary file". Periksa
+# arsitektur lebih dulu, dan kalau tidak cocok pakai speedtest-cli dari
+# paket distro sebagai gantinya.
+_st_tmp=$(mktemp /tmp/st.XXXXXX)
+if wget -q --timeout=30 --tries=2 -O "$_st_tmp" \
+     "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/speedtest_cli.py" \
+   && [ -s "$_st_tmp" ]; then
+    _st_arch=$(od -An -tx1 -j18 -N2 "$_st_tmp" | tr -d ' \n')
+    _butuh=""
+    case "$_st_arch" in
+        3e00) _butuh="x86-64" ;;
+        b700) _butuh="aarch64" ;;
+        2800) _butuh="arm" ;;
+    esac
+    _mesin=$(uname -m)
+    case "$_mesin:$_butuh" in
+        x86_64:x86-64|aarch64:aarch64|armv7l:arm|armv6l:arm)
+            mv -f "$_st_tmp" speedtest
+            chmod +x speedtest
+            echo -e "[ ${green}ok${NC} ] speedtest terpasang ($_butuh)"
+            ;;
+        *)
+            rm -f "$_st_tmp"
+            echo -e "[ ${yell}WARN${NC} ] speedtest binary $_butuh tidak cocok untuk $_mesin"
+            # Fallback: paket distro (Python, jalan di semua arsitektur)
+            if apt-get install -y -qq speedtest-cli >/dev/null 2>&1; then
+                echo -e "[ ${green}ok${NC} ] speedtest-cli dari paket distro dipakai"
+            else
+                echo -e "[ ${yell}WARN${NC} ] menu speedtest tidak akan berfungsi"
+            fi
+            ;;
+    esac
+else
+    rm -f "$_st_tmp"
+    echo -e "[ ${yell}WARN${NC} ] speedtest gagal diunduh"
+fi
+
 wget -q -O xp "https://raw.githubusercontent.com/Masbrow33/dxavier/main/ssh/xp.sh"
 wget -q -O auto-set "https://raw.githubusercontent.com/Masbrow33/dxavier/main/xray/auto-set.sh"
 wget -q -O jam "https://raw.githubusercontent.com/Masbrow33/dxavier/main/jam.sh"
-chmod +x speedtest
 chmod +x xp
 chmod +x auto-set
 chmod +x jam

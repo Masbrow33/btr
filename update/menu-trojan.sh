@@ -217,7 +217,7 @@ _bline "Please choose another name."
 _box_bot
 _byline
 read -n 1 -s -r -p "   Press any key to back on menu"
-trojan-menu
+menu-trojan
 fi
 done
 uuid=$(cat /proc/sys/kernel/random/uuid)
