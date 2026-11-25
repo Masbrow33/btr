@@ -6,6 +6,12 @@
 # (C) Copyright 2021 By FsidVPN
 # =========================================
 
+# // Cek jika variabel sudah di-set (untuk background install)
+if [[ -n "$Input_License_Key" && -n "$pp" ]]; then
+    # Variabel sudah ada (dari screen -dm), skip input
+    SKIP_INPUT=1
+fi
+
 # // Root Checking
 if [ "${EUID}" -ne 0 ]; then
 		echo -e "${EROR} Please Run This Script As Root User !"
@@ -95,11 +101,15 @@ echo -e "${CYAN}│${NC}  Masukkan license key untuk melanjutkan.        ${CYAN}
 echo -e "${CYAN}│${NC}  Tekan ENTER tanpa isi untuk membatalkan.       ${CYAN}│${NC}"
 echo -e "${CYAN}└─────────────────────────────────────────────────┘${NC}"
 echo ""
-printf '  License Key : '
-read -r Input_License_Key
-printf '  Domain      : '
-read -r pp
-echo ""
+
+# Skip input jika variabel sudah di-set (untuk background install)
+if [[ -z "$SKIP_INPUT" ]]; then
+    printf '  License Key : '
+    read -r Input_License_Key
+    printf '  Domain      : '
+    read -r pp
+    echo ""
+fi
 
 # // Checking Input Blank
 if [[ $Input_License_Key ==  "" ]]; then
