@@ -6,6 +6,60 @@
 # (C) Copyright 2021 By FsidVPN
 # =========================================
 
+# // Check if running inside screen session
+if [ -z "$STY" ]; then
+    echo ""
+    echo -e "${CYAN}┌─────────────────────────────────────────────────┐${NC}"
+    echo -e "${CYAN}│${NC}  \e[1mOPSI INSTALASI\e[0m                                   ${CYAN}│${NC}"
+    echo -e "${CYAN}│${NC}  1. Install di foreground (langsung)          ${CYAN}│${NC}"
+    echo -e "${CYAN}│${NC}  2. Install di background (screen)            ${CYAN}│${NC}"
+    echo -e "${CYAN}│${NC}  3. Lihat proses instalasi yang berjalan       ${CYAN}│${NC}"
+    echo -e "${CYAN}└─────────────────────────────────────────────────┘${NC}"
+    echo ""
+    printf '  Pilihan [1/2/3] : '
+    read -r install_option
+    echo ""
+    
+    case "$install_option" in
+        3)
+            # Check for existing screen sessions
+            existing_sessions=$(screen -ls 2>/dev/null | grep -E 'setup|yokkovpn' | awk -F. '{print $1}' | tr -d ' \t')
+            if [ -z "$existing_sessions" ]; then
+                echo -e "${EROR} Tidak ada sesi instalasi yang berjalan.${NC}"
+                exit 1
+            else
+                echo -e "${INFO} Sesi instalasi yang berjalan:${NC}"
+                screen -ls 2>/dev/null | grep -E 'setup|yokkovpn'
+                echo ""
+                printf '  Pilih sesi untuk dilihat (nomor/ID) : '
+                read -r session_id
+                if screen -ls 2>/dev/null | grep -q "$session_id"; then
+                    echo -e "${OKEY} Menampilkan sesi $session_id...${NC}"
+                    screen -r "$session_id"
+                    exit 0
+                else
+                    echo -e "${EROR} Sesi $session_id tidak ditemukan.${NC}"
+                    exit 1
+                fi
+            fi
+            ;;
+        2)
+            # Start installation in background screen session
+            echo -e "${INFO} Memulai instalasi di background (screen -S setup)...${NC}"
+            screen -S setup -dm bash -c "cd /root && wget -q -O - https://raw.githubusercontent.com/Masbrow33/btr/main/setup.sh | bash"
+            echo -e "${OKEY} Instalasi berjalan di latar belakang.${NC}"
+            echo -e "${INFO} Untuk melihat progres: screen -r setup${NC}"
+            echo -e "${INFO} Untuk keluar dari sesi: Ctrl+A lalu D${NC}"
+            echo -e "${INFO} Untuk kembali ke sesi: screen -r setup${NC}"
+            exit 0
+            ;;
+        *)
+            # Default: run in foreground
+            echo -e "${INFO} Melanjutkan instalasi di foreground...${NC}"
+            ;;
+    esac
+fi
+
 # // Root Checking
 if [ "${EUID}" -ne 0 ]; then
 		echo -e "${EROR} Please Run This Script As Root User !"
