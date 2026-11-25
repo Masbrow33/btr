@@ -305,6 +305,8 @@ DROPBEAR_EXTRA_ARGS="-p 109 -p 50000 -p 110 -p 69"
 DROPBEAR_RECEIVE_WINDOW=65536
 DBEOF
 # Generate host keys untuk dropbear (wajib, jika tidak dropbear gagal start)
+# Buat direktori terlebih dahulu
+mkdir -p /etc/dropbear
 if [ ! -f /etc/dropbear/dropbear_dss_host_key ]; then
     dropbearkey -t dss -f /etc/dropbear/dropbear_dss_host_key
     chmod 600 /etc/dropbear/dropbear_dss_host_key
@@ -703,8 +705,8 @@ Description=Dropbear SSH Server
 After=network.target
 
 [Service]
-Type=simple
-ExecStart=/usr/sbin/dropbear -F -E -p 143 -p 109 -p 110 -p 69 -p 50000
+Type=forking
+ExecStart=/usr/sbin/dropbear -F -E -R -p 143 -p 109 -p 110 -p 69 -p 50000
 Restart=on-failure
 RestartSec=5
 
