@@ -261,9 +261,12 @@ fi
 
 # // Validate Successfull
 echo ""
-printf '  Tekan %sENTER%s untuk mulai instalasi... ' "$green" "$NC"
-read -r
-echo ""
+# Skip read -r jika variabel sudah di-set (untuk background install)
+if [[ -z "$SKIP_INPUT" ]]; then
+    printf '  Tekan %sENTER%s untuk mulai instalasi... ' "$green" "$NC"
+    read -r
+    echo ""
+fi
 
 # // Installing Update
 echo -e "${GREEN}Starting Installation............${NC}"
