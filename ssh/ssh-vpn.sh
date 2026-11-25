@@ -669,10 +669,15 @@ END
 service cron restart >/dev/null 2>&1
 service cron reload >/dev/null 2>&1
 
-# remove unnecessary files
-sleep 1
-echo -e "[ ${green}INFO$NC ] Clearing trash"
-apt autoclean -y >/dev/null 2>&1
+# Menu akun harus ditulis ulang setelah instalasi, karena update.sh
+# mengunduh menu dari btr dan versi itu yang dipakai user.
+# Menu ini memakai domain final dari /etc/xray/domain.
+wget -q -O /usr/bin/menu-trojan https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-trojan.sh && chmod +x /usr/bin/menu-trojan || true
+wget -q -O /usr/bin/menu-vless https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-vless.sh && chmod +x /usr/bin/menu-vless || true
+wget -q -O /usr/bin/menu-vmess https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-vmess.sh && chmod +x /usr/bin/menu-vmess || true
+wget -q -O /usr/bin/menu-ss https://raw.githubusercontent.com/Masbrow33/btr/main/update/menu-ss.sh && chmod +x /usr/bin/menu-ss || true
+
+# Hapus file setup setelah semua langkah selesai
 
 if dpkg -s unscd >/dev/null 2>&1; then
 apt -y remove --purge unscd >/dev/null 2>&1
@@ -699,13 +704,27 @@ sleep 1
 echo -e "[ ${green}ok${NC} ] Restarting ssh "
 # Tambah systemd service untuk dropbear (jika belum ada)
 if [ ! -f /etc/systemd/system/dropbear.service ]; then
+    # Buat sertifikat host sebelum start. Dropbear gagal bila tidak ada key.
+    mkdir -p /etc/dropbear
+    if [ ! -f /etc/dropbear/dropbear_rsa_host_key ]; then
+        dropbearkey -t rsa -f /etc/dropbear/dropbear_rsa_host_key >/dev/null
+        chmod 600 /etc/dropbear/dropbear_rsa_host_key
+    fi
+    if [ ! -f /etc/dropbear/dropbear_ecdsa_host_key ]; then
+        dropbearkey -t ecdsa -f /etc/dropbear/dropbear_ecdsa_host_key >/dev/null
+        chmod 600 /etc/dropbear/dropbear_ecdsa_host_key
+    fi
+    if [ ! -f /etc/dropbear/dropbear_ed25519_host_key ]; then
+        dropbearkey -t ed25519 -f /etc/dropbear/dropbear_ed25519_host_key >/dev/null
+        chmod 600 /etc/dropbear/dropbear_ed25519_host_key
+    fi
     cat > /etc/systemd/system/dropbear.service <<'EOF'
 [Unit]
 Description=Dropbear SSH Server
 After=network.target
 
 [Service]
-Type=forking
+Type=simple
 ExecStart=/usr/sbin/dropbear -F -E -R -p 143 -p 109 -p 110 -p 69 -p 50000
 Restart=on-failure
 RestartSec=5

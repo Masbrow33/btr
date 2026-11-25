@@ -531,8 +531,13 @@ wget -O ins-xray.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/xra
 
 # Buat /etc/xray/domain SETELAH ins-xray.sh selesai (untuk menghindari skip)
 mkdir -p /etc/xray
-echo "$pp" > /etc/xray/domain
-echo "$pp" > /etc/xray/scdomain
+echo "${pp}" > /etc/xray/domain
+# Jangan menimpa domain dengan IP bila ins-xray berhasil mengambil domain
+# dari /root/domain; menu akun harus memakai host yang sama dengan sertifikat.
+if [ -s /root/domain ]; then
+    cp -f /root/domain /etc/xray/domain
+fi
+echo "${pp}" > /etc/xray/scdomain
 
 # Install BadVPN
 clear
