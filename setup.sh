@@ -463,8 +463,8 @@ if [ -z "$pp" ]; then
 fi
 echo "$pp" > /root/domain
 echo "$pp" > /root/scdomain
-echo "$pp" > /etc/xray/domain
-echo "$pp" > /etc/xray/scdomain
+# JANGAN buat /etc/xray/domain di sini! (akan menyebabkan ins-xray.sh skip)
+# Pindah ke setelah ins-xray.sh dijalankan
 echo "IP=$pp" > /var/lib/yokkovpn-pro/ipvps.conf
 
 #THEME RED
@@ -528,6 +528,11 @@ clear
 echo -e "$green[INFO]$NC Install XRAY!"
 sleep 2
 wget -O ins-xray.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/xray/ins-xray.sh && chmod +x ins-xray.sh && ./ins-xray.sh
+
+# Buat /etc/xray/domain SETELAH ins-xray.sh selesai (untuk menghindari skip)
+mkdir -p /etc/xray
+echo "$pp" > /etc/xray/domain
+echo "$pp" > /etc/xray/scdomain
 
 # Install BadVPN
 clear
