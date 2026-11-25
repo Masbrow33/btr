@@ -292,7 +292,7 @@ sleep 2
 
 echo "=== Install Dropbear ==="
 # install dropbear
-#apt -y install dropbear
+apt -y install dropbear
 sed -i 's/NO_START=1/NO_START=0/g' /etc/default/dropbear
 # Ubuntu 24.04 mengomentari semua variabel di /etc/default/dropbear
 # (#DROPBEAR_PORT=143), jadi sed ke DROPBEAR_PORT=22 tidak pernah cocok.
@@ -304,22 +304,23 @@ DROPBEAR_PORT=143
 DROPBEAR_EXTRA_ARGS="-p 109 -p 50000 -p 110 -p 69"
 DROPBEAR_RECEIVE_WINDOW=65536
 DBEOF
-# Idempoten: jalankan install berkali-kali tidak boleh menduplikasi baris.
-# Tanpa penjaga ini, setiap instalasi ulang menambah satu baris lagi dan
-# /etc/shells membengkak.
-grep -qxF '/bin/false' /etc/shells 2>/dev/null || echo "/bin/false" >> /etc/shells
-grep -qxF '/usr/sbin/nologin' /etc/shells 2>/dev/null || echo "/usr/sbin/nologin" >> /etc/shells
-# Rapikan duplikat yang mungkin sudah terlanjur ada dari instalasi lama.
-if [ -f /etc/shells ]; then
-    awk '!seen[$0]++' /etc/shells > /etc/shells.tmp && mv /etc/shells.tmp /etc/shells
-    chmod 644 /etc/shells
+# Generate host keys untuk dropbear (wajib, jika tidak dropbear gagal start)
+if [ ! -f /etc/dropbear/dropbear_dss_host_key ]; then
+    dropbearkey -t dss -f /etc/dropbear/dropbear_dss_host_key
+    chmod 600 /etc/dropbear/dropbear_dss_host_key
 fi
-/etc/init.d/ssh restart
-/etc/init.d/dropbear restart
+if [ ! -f /etc/dropbear/dropbear_ecdsa_host_key ]; then
+    dropbearkey -t ecdsa -f /etc/dropbear/dropbear_ecdsa_host_key
+    chmod 600 /etc/dropbear/dropbear_ecdsa_host_key
+fi
+if [ ! -f /etc/dropbear/dropbear_ed25519_host_key ]; then
+    dropbearkey -t ed25519 -f /etc/dropbear/dropbear_ed25519_host_key
+    chmod 600 /etc/dropbear/dropbear_ed25519_host_key
+fi
 
 cd
 # install stunnel
-#apt install stunnel4 -y
+apt install stunnel4 -y
 cat > /etc/stunnel/stunnel.conf <<-END
 pid = /var/run/stunnel4.pid
 cert = /etc/stunnel/stunnel.pem
@@ -395,7 +396,25 @@ chmod 600 /etc/stunnel/stunnel.pem
 
 # konfigurasi stunnel
 sed -i 's/ENABLED=0/ENABLED=1/g' /etc/default/stunnel4
+# Tambah konfigurasi systemd untuk stunnel4 (jika belum ada)
+if [ ! -f /etc/systemd/system/stunnel4.service ]; then
+    cat > /etc/systemd/system/stunnel4.service <<'EOF'
+[Unit]
+Description=SSL Tunnel Service
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/stunnel4 /etc/stunnel/stunnel.conf
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl daemon-reload
+fi
 /etc/init.d/stunnel4 restart
+systemctl enable stunnel4 >/dev/null 2>&1 || true
 
 
 # install fail2ban
@@ -676,7 +695,27 @@ echo -e "[ ${green}ok${NC} ] Restarting cron "
 /etc/init.d/ssh restart >/dev/null 2>&1
 sleep 1
 echo -e "[ ${green}ok${NC} ] Restarting ssh "
+# Tambah systemd service untuk dropbear (jika belum ada)
+if [ ! -f /etc/systemd/system/dropbear.service ]; then
+    cat > /etc/systemd/system/dropbear.service <<'EOF'
+[Unit]
+Description=Dropbear SSH Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/dropbear -F -E -p 143 -p 109 -p 110 -p 69 -p 50000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl daemon-reload
+    systemctl enable dropbear >/dev/null 2>&1 || true
+fi
 /etc/init.d/dropbear restart >/dev/null 2>&1
+systemctl restart dropbear >/dev/null 2>&1 || true
 sleep 1
 echo -e "[ ${green}ok${NC} ] Restarting dropbear "
 /etc/init.d/fail2ban restart >/dev/null 2>&1
