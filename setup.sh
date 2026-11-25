@@ -515,15 +515,15 @@ echo -e "$green[INFO]$NC Install XRAY!"
 sleep 2
 wget -O ins-xray.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/xray/ins-xray.sh && chmod +x ins-xray.sh && ./ins-xray.sh
 
-# Install SlowDNS
+# Install BadVPN
 clear
-wget -O install-sldns.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/slowdnss/install-sldns.sh && chmod +x install-sldns.sh
+wget -O install-badvpn.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/badvpn/install-badvpn.sh && chmod +x install-badvpn.sh
 # Cek arsitektur sebelum jalankan BadVPN (hanya x86_64 yang support)
 if [[ $(uname -m) == "x86_64" ]]; then
-    ./install-sldns.sh
+    ./install-badvpn.sh
 else
     echo -e "[ ${yell}WARNING${NC} ] BadVPN tidak tersedia untuk $(uname -m), melewati..."
-    rm -f install-sldns.sh
+    rm -f install-badvpn.sh
     sleep 2
 fi
 clear
