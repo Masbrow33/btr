@@ -734,7 +734,6 @@ WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
 systemctl enable dropbear >/dev/null 2>&1 || true
-fi
 /etc/init.d/dropbear restart >/dev/null 2>&1
 systemctl restart dropbear >/dev/null 2>&1 || true
 sleep 1
