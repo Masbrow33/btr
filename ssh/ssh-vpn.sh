@@ -292,7 +292,7 @@ sleep 2
 
 echo "=== Install Dropbear ==="
 # install dropbear
-apt -y install dropbear squid
+# apt -y install dropbear squid  # Sudah diinstall di setup.sh
 sed -i 's/NO_START=1/NO_START=0/g' /etc/default/dropbear
 # Ubuntu 24.04 mengomentari semua variabel di /etc/default/dropbear
 # (#DROPBEAR_PORT=143), jadi sed ke DROPBEAR_PORT=22 tidak pernah cocok.
@@ -322,7 +322,7 @@ fi
 
 cd
 # install stunnel
-apt install stunnel4 -y
+# apt install stunnel4 -y  # Sudah diinstall di setup.sh
 cat > /etc/stunnel/stunnel.conf <<-END
 pid = /var/run/stunnel4.pid
 cert = /etc/stunnel/stunnel.pem
