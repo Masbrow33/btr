@@ -97,6 +97,8 @@ echo -e "${CYAN}└────────────────────�
 echo ""
 printf '  License Key : '
 read -r Input_License_Key
+printf '  Domain      : '
+read -r pp
 echo ""
 
 # // Checking Input Blank
@@ -381,10 +383,6 @@ wget -q -O dependencies.sh https://raw.githubusercontent.com/Masbrow33/dxavier/m
 rm dependencies.sh
 clear
 
-yellow "Add Domain for vmess/vless/trojan dll"
-echo " "
-printf '  Input ur domain : '
-read -r pp
 # Domain kosong membuat nginx gagal start (server_name tanpa argumen)
 # dan Xray tidak bisa membuat sertifikat. Pakai placeholder yang aman.
 if [ -z "$pp" ]; then
