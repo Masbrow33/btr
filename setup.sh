@@ -177,14 +177,16 @@ echo -e "${OKEY} Installation Limit ( ${GREEN}$Install_Limit VPS${NC} )"
 export Tanggal_Sekarang=`date -d "0 days" +"%Y-%m-%d"`
 export Masa_Aktif_Dalam_Satuan_Detik=$(date -d "$Masa_Laku_License_Berlaku_Sampai" +%s)
 export Tanggal_Sekarang_Dalam_Satuan_Detik=$(date -d "$Tanggal_Sekarang" +%s)
-export Hasil_Pengurangan_Dari_Masa_Aktif_Dan_Hari_Ini_Dalam_Satuan_Detik=$(( (Masa_Aktif_Dalam_Satuan_Detik - Tanggal_Sekarang_Dalam_Satuan_Detik) / 86400 ))
-if [[ $Hasil_Pengurangan_Dari_Masa_Aktif_Dan_Hari_Ini_Dalam_Satuan_Detik -lt 0 ]]; then
+export Sisa_Hari=$(( (Masa_Aktif_Dalam_Satuan_Detik - Tanggal_Sekarang_Dalam_Satuan_Detik) / 86400 ))
+if [[ $Sisa_Hari -lt 0 ]]; then
     echo -e "${EROR} Your License Expired On ( ${RED}$Masa_Laku_License_Berlaku_Sampai${NC} )"
     exit 1
 else
-    echo -e "${OKEY} Your License Key = $(if [[ ${Hasil_Pengurangan_Dari_Masa_Aktif_Dan_Hari_Ini_Dalam_Satuan_Detik} -lt 5 ]]; then 
-    echo -e "${RED}${Hasil_Pengurangan_Dari_Masa_Aktif_Dan_Hari_Ini_Dalam_Satuan_Detik}${NC} Days Left"; else
-    echo -e "${GREEN}${Hasil_Pengurangan_Dari_Masa_Aktif_Dan_Hari_Ini_Dalam_Satuan_Detik}${NC} Days Left"; fi )"
+    if [[ $Sisa_Hari -lt 5 ]]; then
+        echo -e "${OKEY} Your License Key = ${RED}${Sisa_Hari}${NC} Days Left"
+    else
+        echo -e "${OKEY} Your License Key = ${GREEN}${Sisa_Hari}${NC} Days Left"
+    fi
 fi
 
 # // Validate Successfull
@@ -452,13 +454,23 @@ echo -e "$green[INFO]$NC Install SSH & OpenVPN!"
 sleep 2
 clear
 wget -O ssh-vpn.sh https://raw.githubusercontent.com/Masbrow33/btr/main/ssh/ssh-vpn.sh && chmod +x ssh-vpn.sh && ./ssh-vpn.sh
-#Instal Xray
-echo -e "$green[INFO]$NC Install Install XRAY!"
+# Install Xray
+clear
+echo -e "$green[INFO]$NC Install XRAY!"
 sleep 2
-clear
 wget -O ins-xray.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/xray/ins-xray.sh && chmod +x ins-xray.sh && ./ins-xray.sh
+
+# Install SlowDNS
 clear
-wget -O install-sldns.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/slowdnss/install-sldns.sh && chmod +x install-sldns.sh && ./install-sldns.sh
+wget -O install-sldns.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/slowdnss/install-sldns.sh && chmod +x install-sldns.sh
+# Cek arsitektur sebelum jalankan BadVPN (hanya x86_64 yang support)
+if [[ $(uname -m) == "x86_64" ]]; then
+    ./install-sldns.sh
+else
+    echo -e "[ ${yell}WARNING${NC} ] BadVPN tidak tersedia untuk $(uname -m), melewati..."
+    rm -f install-sldns.sh
+    sleep 2
+fi
 clear
 wget -O set-br.sh https://raw.githubusercontent.com/Masbrow33/dxavier/main/backup/set-br.sh && chmod +x set-br.sh && ./set-br.sh
 clear
@@ -569,12 +581,12 @@ rm /root/update.sh
 secs_to_human "$(($(date +%s) - ${start}))" | tee -a log-install.txt
 echo -e ""
 echo "------------------------------------------------------------"
-echo -e "\033[1;32m[ SELESAI ]\033[0m Instalasi selesai."
+echo -e "${GREEN}[ SELESAI ]${NC} Instalasi selesai."
 echo ""
 echo "  VPS perlu di-reboot supaya semua layanan berjalan normal."
-printf '  Tekan \033[1;32mENTER\033[0m untuk reboot sekarang,\n'
+printf '  Tekan %sENTER%s untuk reboot sekarang,\n' "$green" "$NC"
 echo "  atau tunggu 60 detik (reboot otomatis)."
-printf '  Tekan \033[1;33mN\033[0m lalu ENTER untuk reboot manual nanti.\n'
+printf '  Tekan %sN%s lalu ENTER untuk reboot manual nanti.\n' "$yell" "$NC"
 echo ""
 read -t 60 -r -p "  Pilihan [ENTER/n] : " _reb
 case "${_reb:-}" in
