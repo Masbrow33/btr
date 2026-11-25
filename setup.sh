@@ -46,7 +46,10 @@ if [ -z "$STY" ]; then
         2)
             # Start installation in background screen session
             echo -e "${INFO} Memulai instalasi di background (screen -S setup)...${NC}"
-            screen -S setup -dm bash -c "cd /root && wget -q -O - https://raw.githubusercontent.com/Masbrow33/btr/main/setup.sh | bash"
+            # Unduh setup.sh terlebih dahulu untuk menghindari loop
+            wget -q -O /root/setup.sh https://raw.githubusercontent.com/Masbrow33/btr/main/setup.sh
+            chmod +x /root/setup.sh
+            screen -S setup -dm bash /root/setup.sh
             echo -e "${OKEY} Instalasi berjalan di latar belakang.${NC}"
             echo -e "${INFO} Untuk melihat progres: screen -r setup${NC}"
             echo -e "${INFO} Untuk keluar dari sesi: Ctrl+A lalu D${NC}"
