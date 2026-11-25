@@ -406,8 +406,7 @@ END
 chmod 644 /root/.profile
 
 echo -e "[ ${green}INFO${NC} ] Preparing the install file"
-apt install git curl stunnel4 squid -y >/dev/null 2>&1
-apt install dropbear -y >/dev/null 2>&1
+apt install git curl -y >/dev/null 2>&1
 echo -e "[ ${green}INFO${NC} ] Aight good ... installation file is ready"
 sleep 3
 
