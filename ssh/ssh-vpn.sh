@@ -702,23 +702,23 @@ echo -e "[ ${green}ok${NC} ] Restarting cron "
 /etc/init.d/ssh restart >/dev/null 2>&1
 sleep 1
 echo -e "[ ${green}ok${NC} ] Restarting ssh "
-# Tambah systemd service untuk dropbear (jika belum ada)
-if [ ! -f /etc/systemd/system/dropbear.service ]; then
-    # Buat sertifikat host sebelum start. Dropbear gagal bila tidak ada key.
-    mkdir -p /etc/dropbear
-    if [ ! -f /etc/dropbear/dropbear_rsa_host_key ]; then
-        dropbearkey -t rsa -f /etc/dropbear/dropbear_rsa_host_key >/dev/null
-        chmod 600 /etc/dropbear/dropbear_rsa_host_key
-    fi
-    if [ ! -f /etc/dropbear/dropbear_ecdsa_host_key ]; then
-        dropbearkey -t ecdsa -f /etc/dropbear/dropbear_ecdsa_host_key >/dev/null
-        chmod 600 /etc/dropbear/dropbear_ecdsa_host_key
-    fi
-    if [ ! -f /etc/dropbear/dropbear_ed25519_host_key ]; then
-        dropbearkey -t ed25519 -f /etc/dropbear/dropbear_ed25519_host_key >/dev/null
-        chmod 600 /etc/dropbear/dropbear_ed25519_host_key
-    fi
-    cat > /etc/systemd/system/dropbear.service <<'EOF'
+# Tambah systemd service untuk dropbear.
+# Tulis ulang setiap instalasi agar unit lama yang rusak tidak dipakai.
+# Buat sertifikat host sebelum start. Dropbear gagal bila tidak ada key.
+mkdir -p /etc/dropbear
+if [ ! -f /etc/dropbear/dropbear_rsa_host_key ]; then
+    dropbearkey -t rsa -f /etc/dropbear/dropbear_rsa_host_key >/dev/null
+    chmod 600 /etc/dropbear/dropbear_rsa_host_key
+fi
+if [ ! -f /etc/dropbear/dropbear_ecdsa_host_key ]; then
+    dropbearkey -t ecdsa -f /etc/dropbear/dropbear_ecdsa_host_key >/dev/null
+    chmod 600 /etc/dropbear/dropbear_ecdsa_host_key
+fi
+if [ ! -f /etc/dropbear/dropbear_ed25519_host_key ]; then
+    dropbearkey -t ed25519 -f /etc/dropbear/dropbear_ed25519_host_key >/dev/null
+    chmod 600 /etc/dropbear/dropbear_ed25519_host_key
+fi
+cat > /etc/systemd/system/dropbear.service <<'EOF'
 [Unit]
 Description=Dropbear SSH Server
 After=network.target
@@ -732,8 +732,8 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
-    systemctl daemon-reload
-    systemctl enable dropbear >/dev/null 2>&1 || true
+systemctl daemon-reload
+systemctl enable dropbear >/dev/null 2>&1 || true
 fi
 /etc/init.d/dropbear restart >/dev/null 2>&1
 systemctl restart dropbear >/dev/null 2>&1 || true
